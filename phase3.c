@@ -3,6 +3,7 @@
 
 #include "phase1.h"
 #include "phase2.h"
+#include "phase3.h"
 
 int debugflag3 = 0;
 
@@ -10,7 +11,13 @@ int start2(char *arg)
 {
     if (DEBUG3 && debugflag3)
     {
-        USLOSS_Console("start3(): Called.\n");
+        USLOSS_Console("start2(): Called.\n");
+    }
+
+    // Check kernel mode
+    if (!(USLOSS_PsrGet() & USLOSS_PSR_CURRENT_MODE))
+    {
+        USLOSS_Console("start2(): Called from user mode.  Halting...\n");
     }
 
     // initialize system call vector
@@ -30,14 +37,11 @@ int start2(char *arg)
     systemCallVec[SYS_GETPID] = getPID;
 
     // spawn start 3
-    systemArgs args;
-    args.number = SYS_SPAWN;
-    args.arg1 = (void *) start3;
-    args.arg2 = NULL;
-    args.arg3 = (void *) (4 * USLOSS_MIN_STACK);
-    args.arg4 = (void *) 3;
-    args.arg5 = (void *) "start3";
-    USLOSS_Syscall((void *) &args);
+    int pid = spawnReal("start3", start3, NULL, 4 * USLOSS_MIN_STACK, 3);
+
+    // wait for start3 to finish
+    int status;
+    pid = waitReal(&status);
 }
 
 void nullsys3(systemArgs *arg)
