@@ -1,26 +1,12 @@
 #include <usloss.h>
+#include <usyscall.h>
 
-#define NO_SLOTS_AVAILABLE -1
-
-typedef struct USLOSS_Sysargs
-{
-        int  number;
-        void *arg1;
-        void *arg2;
-        void *arg3;
-        void *arg4;
-        void *arg5;
-} systemArgs;
-
-typedef struct
-{
-    int count;
-} Semaphore;
-
-// TODO: There is some limit on semaphores. Fix this
-Semaphore[] semaphores = Semaphore[50];
+#include "phase1.h"
+#include "phase2.h"
 
 int debugflag3 = 0;
+
+Semaphore[] semaphores = Semaphore[MAXSEMS];
 
 int start2(char *arg)
 {
@@ -29,6 +15,35 @@ int start2(char *arg)
         USLOSS_Console("start3(): Called.\n");
     }
 
+    // initialize system call vector
+    for (int i = 0; i < MAXSYSCALL; i++)
+    {
+        systemCallVec[i] = nullsys3;
+    }
+    systemCallVec[SYS_SPAWN] = spawn;
+    systemCallVec[SYS_WAIT] = wait;
+    systemCallVec[SYS_TERMINATE] = terminate;
+    systemCallVec[SYS_SEMCREATE] = semCreate;
+    systemCallVec[SYS_SEMP] = semP;
+    systemCallVec[SYS_SEMV] = semV;
+    systemCallVec[SYS_SEMFREE] = semFree;
+    systemCallVec[SYS_GETTIMEOFDAY] = getTimeOfDay;
+    systemCallVec[SYS_CPUTIME] = cpuTime;
+    systemCallVec[SYS_GETPID] = getPID;
+
+    // spawn start 3
+    systemArgs args;
+    args.number = SYS_SPAWN;
+    args.arg1 = (void *) start3;
+    args.arg2 = NULL;
+    args.arg3 = (void *) (4 * USLOSS_MIN_STACK);
+    args.arg4 = (void *) 3;
+    args.arg5 = (void *) "start3";
+    USLOSS_Syscall((void *) &args);
+}
+
+void nullsys3(systemArgs *arg)
+{
 }
 
 void spawn(systemArgs *arg)
@@ -86,7 +101,7 @@ void getTimeOfDay(systemArgs *args)
 {
 }
 
-void CPUTime(systemArgs *args)
+void cpuTime(systemArgs *args)
 {
 }
 
