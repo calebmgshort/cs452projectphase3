@@ -7,11 +7,4 @@
 
 #define MAXSEMS         200
 
-#define NO_SLOTS_AVAILABLE -1
-
-typedef struct
-{
-    int count;
-} Semaphore;
-
 #endif /* _PHASE3_H */

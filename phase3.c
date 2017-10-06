@@ -5,9 +5,11 @@
 #include "phase2.h"
 #include "phase3.h"
 
+// Debugging flag
 int debugflag3 = 0;
 
-Semaphore[] semaphores = Semaphore[MAXSEMS];
+// The sems table
+semaphore Semaphores[MAXSEMS];
 
 int start2(char *arg)
 {
@@ -16,20 +18,13 @@ int start2(char *arg)
         USLOSS_Console("start2(): Called.\n");
     }
 
-pid = spawnReal("start3", start3, NULL, USLOSS_MIN_STACK, 3);
-
-/* Call the waitReal version of your wait code here.
- * You call waitReal (rather than Wait) because start2 is running
- * in kernel (not user) mode.
- */
-
     // Check kernel mode
     if (!(USLOSS_PsrGet() & USLOSS_PSR_CURRENT_MODE))
     {
         USLOSS_Console("start2(): Called from user mode.  Halting...\n");
     }
 
-    // initialize system call vector
+    // Initialize system call vector
     for (int i = 0; i < MAXSYSCALL; i++)
     {
         systemCallVec[i] = nullsys3;
@@ -105,8 +100,8 @@ void terminate(systemArgs *args)
 // TODO: Implement
 void semCreate(systemArgs *args)
 {
-    int initSemValue = *((int*) args->arg1)); // TODO: use val in pointer or pointer?
-    int* args1Val = &(-1);
+    int initSemValue = *((int*) args->arg1); // TODO: use val in pointer or pointer?
+    int* args1Val = (void *) -1;
     if(initSemValue < 0)
     {
         args->arg1 = (void*) args1Val;
@@ -114,7 +109,7 @@ void semCreate(systemArgs *args)
         return;
     }
     int handle = getAvailableHandle();  // TODO: implement
-    if(hande == NO_SLOTS_AVAILABLE)
+    if (handle == NO_SLOTS_AVAILABLE)
     {
         args->arg1 = (void*) args1Val;
         args->arg4 = (void*) args1Val;
@@ -122,11 +117,11 @@ void semCreate(systemArgs *args)
     }
     *args1Val = handle;
 
-    Semaphore *sem;
-    sem->count = initSemValue
-    semaphores[handle] = sem;
+    semaphore *sem;
+    sem->count = initSemValue;
+    Semaphores[handle] = sem;
     args->arg1 = (void*) args1Val;
-    args->arg4 = (void*) &(0);
+    args->arg4 = (void *) 0;
     return;
 }
 
