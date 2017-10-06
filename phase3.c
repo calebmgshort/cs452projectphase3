@@ -4,12 +4,16 @@
 #include "phase1.h"
 #include "phase2.h"
 #include "phase3.h"
+#include "sems.h"
 
 // Debugging flag
 int debugflag3 = 0;
 
 // The sems table
 semaphore Semaphores[MAXSEMS];
+
+// The phase 3 proc table
+userProc ProcTable[MAXPROCS];
 
 int start2(char *arg)
 {
@@ -155,11 +159,50 @@ void getPID(systemArgs *args)
 }
 
 /******************** Real Functions ******************/
-
-
-// TODO: Implement
-void spawnReal()
+int spawnReal(char *name, int (*startFunc)(char *), char *args, int stackSize, int priority)
 {
+    // Create a mailbox for synchronization with spawnLaunch
+    int mbox = MboxCreate(0, MAX_MESSAGE);
+
+    // Convert the mboxID into a string
+    char buf[MAX_MESSAGE];
+    sprintf(buf, "%d", mbox);
+
+    // Fork a new process
+    int pid = fork1(name, spawnLaunch, buf, stackSize, priority);
+
+    // Setup the proc table for the new proc
+    userProcPtr proc = &ProcTable[pid % MAXPROCS];
+    proc->pid = pid;
+    proc->args = args;
+    proc->startFunc = startFunc;
+
+    // Let spawnLaunch execute and release the mailbox
+    MboxSend(mbox, NULL, 0);
+    MboxRelease(mbox);
+
+    // Return the pid of the new proc
+    return pid;
+}
+
+int spawnLaunch(char *arg)
+{
+    // Unpack the mboxID from args
+    int mboxID = atoi(arg);
+
+    // Wait for spawnReal to finish setting up the proc table
+    MboxReceive(mbox, NULL, 0);
+
+    // Change the process into user mode
+    setToUserMode();
+
+    // Call the start func and capture return value
+    userProcPtr proc = &ProcTable[getpid() % MAXPROCS];
+    int status = proc->startFunc(proc->args);
+
+    // Terminate
+    terminateReal(status);
+    return 0;
 }
 
 // TODO: Implement
