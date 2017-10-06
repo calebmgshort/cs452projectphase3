@@ -35,11 +35,11 @@
  *  Return Value: 0 means success, -1 means error occurs
  *
  */
-int Spawn(char *name, int (*func)(char *), char *arg, int stack_size, 
-    int priority, int *pid)   
+int Spawn(char *name, int (*func)(char *), char *arg, int stack_size,
+    int priority, int *pid)
 {
     USLOSS_Sysargs sysArg;
-    
+
     CHECKMODE;
     sysArg.number = SYS_SPAWN;
     sysArg.arg1 = (void *) func;
@@ -71,7 +71,7 @@ int Spawn(char *name, int (*func)(char *), char *arg, int stack_size,
 int Wait(int *pid, int *status)
 {
     USLOSS_Sysargs sysArg;
-    
+
     CHECKMODE;
     sysArg.number = SYS_WAIT;
 
@@ -80,14 +80,14 @@ int Wait(int *pid, int *status)
     *pid = (int) sysArg.arg1;
     *status = (int) sysArg.arg2;
     return (int) sysArg.arg4;
-    
+
 } /* end of Wait */
 
 
 /*
  *  Routine:  Terminate
  *
- *  Description: This is the call entry to terminate 
+ *  Description: This is the call entry to terminate
  *               the invoking process and its children
  *
  *  Arguments:   int status -- the commpletion status of the process
@@ -97,7 +97,15 @@ int Wait(int *pid, int *status)
  */
 void Terminate(int status)
 {
-    
+  USLOSS_Sysargs sysArg;
+
+  CHECKMODE;
+  sysArg.number = SYS_TERMINATE;
+
+  USLOSS_Syscall(&sysArg);
+
+  return (int) sysArg.arg1;
+
 } /* end of Terminate */
 
 
@@ -169,7 +177,7 @@ int SemFree(int semaphore)
  *  Arguments:
  *
  */
-void GetTimeofDay(int *tod)                           
+void GetTimeofDay(int *tod)
 {
 } /* end of GetTimeofDay */
 
@@ -182,7 +190,7 @@ void GetTimeofDay(int *tod)
  *  Arguments:
  *
  */
-void CPUTime(int *cpu)                           
+void CPUTime(int *cpu)
 {
 } /* end of CPUTime */
 
@@ -195,7 +203,7 @@ void CPUTime(int *cpu)
  *  Arguments:
  *
  */
-void GetPID(int *pid)                           
+void GetPID(int *pid)
 {
 } /* end of GetPID */
 
