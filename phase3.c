@@ -100,29 +100,28 @@ void terminate(systemArgs *args)
 // TODO: Implement
 void semCreate(systemArgs *args)
 {
-    int initSemValue = *((int*) args->arg1); // TODO: use val in pointer or pointer?
-    int* args1Val = (void *) -1;
-    if(initSemValue < 0)
+    int initSemValue = (int) args->arg1;
+    if(initSemValue < 0)    // Initial Sem value is invalid
     {
-        args->arg1 = (void*) args1Val;
-        args->arg4 = (void*) args1Val;
+        args->arg4 = -1;
         return;
     }
-    int handle = getAvailableHandle();  // TODO: implement
-    if (handle == NO_SLOTS_AVAILABLE)
+    if(!isSemAvailable()) // TODO: Implement this function
     {
-        args->arg1 = (void*) args1Val;
-        args->arg4 = (void*) args1Val;
+        args->arg4 = -1;
         return;
     }
-    *args1Val = handle;
 
-    semaphore *sem;
-    sem->count = initSemValue;
-    Semaphores[handle] = sem;
-    args->arg1 = (void*) args1Val;
-    args->arg4 = (void *) 0;
-    return;
+    int semID = semCreateReal(initSemValue);
+
+    systemArgs->arg1 = (void*) semID;
+    systemArgs->arg4 = (void*) 0;
+
+    if(isZapped())
+    {
+        terminateReal();  // TODO: does terminate take an input?
+    }
+    setToUserMode();
 }
 
 // TODO: Implement
@@ -174,8 +173,14 @@ void terminateReal()
 }
 
 // TODO: Implement
-void semCreateReal()
+void semCreateReal(int initSemValue)
 {
+    int semHandle = getAvailableSemHandle();  // TODO: implement
+    initSem(semHandle, initSemValue);         // TODO: implement
+
+    // TODO: mailbox stuff
+
+    return semHandle; // The handle is just the semID
 }
 
 // TODO: Implement
