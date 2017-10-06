@@ -90,10 +90,7 @@ int Wait(int *pid, int *status)
  *  Description: This is the call entry to terminate
  *               the invoking process and its children
  *
- *  Arguments:   int status -- the commpletion status of the process
- *
- *  Return Value: 0 means success, -1 means error occurs
- *
+ *  Arguments: int status - The termination code for the process
  */
 void Terminate(int status)
 {
@@ -101,10 +98,9 @@ void Terminate(int status)
 
   CHECKMODE;
   sysArg.number = SYS_TERMINATE;
+  sysArg.arg1 = (void *) status;
 
   USLOSS_Syscall(&sysArg);
-
-  return (int) sysArg.arg1;
 
 } /* end of Terminate */
 
@@ -114,13 +110,21 @@ void Terminate(int status)
  *
  *  Description: Create a semaphore.
  *
- *  Arguments:
+ *  Arguments: int value - The initial semaphore value
  *
  */
 int SemCreate(int value, int *semaphore)
 {
-    int something = 0;
-    return something;
+    USLOSS_Sysargs sysArg;
+
+    CHECKMODE;
+    sysArg.number = SYS_SEMCREATE;
+    sysArg.arg1 = (void *) value;
+
+    USLOSS_Syscall(&sysArg);
+
+    *semaphore = (int) sysArg.arg1;
+    return (int) sysArg.arg4;
 } /* end of SemCreate */
 
 
@@ -129,13 +133,20 @@ int SemCreate(int value, int *semaphore)
  *
  *  Description: "P" a semaphore.
  *
- *  Arguments:
+ *  Arguments: int semaphore - semaphore handle
  *
  */
 int SemP(int semaphore)
 {
-    int something = 0;
-    return something;
+    USLOSS_Sysargs sysArg;
+
+    CHECKMODE;
+    sysArg.number = SYS_SEMP;
+    sysArg.arg1 = (void *) semaphore;
+
+    USLOSS_Syscall(&sysArg);
+
+    return (int) sysArg.arg4;
 } /* end of SemP */
 
 
@@ -144,13 +155,20 @@ int SemP(int semaphore)
  *
  *  Description: "V" a semaphore.
  *
- *  Arguments:
+ *  Arguments: int semaphore - semaphore handle
  *
  */
 int SemV(int semaphore)
 {
-    int something = 0;
-    return something;
+    USLOSS_Sysargs sysArg;
+
+    CHECKMODE;
+    sysArg.number = SYS_SEMV;
+    sysArg.arg1 = (void *) semaphore;
+
+    USLOSS_Syscall(&sysArg);
+
+    return (int) sysArg.arg4;
 } /* end of SemV */
 
 
@@ -159,13 +177,20 @@ int SemV(int semaphore)
  *
  *  Description: Free a semaphore.
  *
- *  Arguments:
+ *  Arguments: int semaphore - semaphore handle
  *
  */
 int SemFree(int semaphore)
 {
-    int something = 0;
-    return something;
+    USLOSS_Sysargs sysArg;
+
+    CHECKMODE;
+    sysArg.number = SYS_SEMFREE;
+    sysArg.arg1 = (void *) semaphore;
+
+    USLOSS_Syscall(&sysArg);
+
+    return (int) sysArg.arg4;
 } /* end of SemFree */
 
 
@@ -174,11 +199,20 @@ int SemFree(int semaphore)
  *
  *  Description: This is the call entry point for getting the time of day.
  *
- *  Arguments:
+ *  Arguments: int* tod - the time of day
  *
  */
 void GetTimeofDay(int *tod)
 {
+    USLOSS_Sysargs sysArg;
+
+    CHECKMODE;
+    sysArg.number = SYS_GETTIMEOFDAY;
+
+    USLOSS_Syscall(&sysArg);
+
+    *tod = (int) sysArg.arg1;
+
 } /* end of GetTimeofDay */
 
 
@@ -187,11 +221,19 @@ void GetTimeofDay(int *tod)
  *
  *  Description: This is the call entry point for the process' CPU time.
  *
- *  Arguments:
+ *  Arguments: int* cpu - the CPU time used by the currently running process
  *
  */
 void CPUTime(int *cpu)
 {
+    USLOSS_Sysargs sysArg;
+
+    CHECKMODE;
+    sysArg.number = SYS_CPUTIME;
+
+    USLOSS_Syscall(&sysArg);
+
+    *cpu = (int) sysArg.arg1;
 } /* end of CPUTime */
 
 
@@ -200,11 +242,19 @@ void CPUTime(int *cpu)
  *
  *  Description: This is the call entry point for the process' PID.
  *
- *  Arguments:
+ *  Arguments: int* pid - the process ID
  *
  */
 void GetPID(int *pid)
 {
+    USLOSS_Sysargs sysArg;
+
+    CHECKMODE;
+    sysArg.number = SYS_GETPID;
+
+    USLOSS_Syscall(&sysArg);
+
+    *pid = (int) sysArg.arg1;
 } /* end of GetPID */
 
 /* end libuser.c */
