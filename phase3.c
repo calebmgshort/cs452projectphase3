@@ -44,39 +44,11 @@ int start2(char *arg)
     systemCallVec[SYS_CPUTIME] = cpuTime;
     systemCallVec[SYS_GETPID] = getPID;
 
-    /*
-     * Create first user-level process and wait for it to finish.
-     * These are lower-case because they are not system calls;
-     * system calls cannot be invoked from kernel mode.
-     * Assumes kernel-mode versions of the system calls
-     * with lower-case names.  I.e., Spawn is the user-mode function
-     * called by the test cases; spawn is the kernel-mode function that
-     * is called by the syscallHandler; spawnReal is the function that
-     * contains the implementation and is called by spawn.
-     *
-     * Spawn() is in libuser.c.  It invokes USLOSS_Syscall()
-     * The system call handler calls a function named spawn() -- note lower
-     * case -- that extracts the arguments from the sysargs pointer, and
-     * checks them for possible errors.  This function then calls spawnReal().
-     *
-     * Here, we only call spawnReal(), since we are already in kernel mode.
-     *
-     * spawnReal() will create the process by using a call to fork1 to
-     * create a process executing the code in spawnLaunch().  spawnReal()
-     * and spawnLaunch() then coordinate the completion of the phase 3
-     * process table entries needed for the new process.  spawnReal() will
-     * return to the original caller of Spawn, while spawnLaunch() will
-     * begin executing the function passed to Spawn. spawnLaunch() will
-     * need to switch to user-mode before allowing user code to execute.
-     * spawnReal() will return to spawn(), which will put the return
-     * values back into the sysargs pointer, switch to user-mode, and
-     * return to the user code that called Spawn.
-     */
-
-    // spawn start 3
+    // Create first user-level process and wait for it to finish.
+    // Here, we only call spawnReal(), since we are already in kernel mode.
     int pid = spawnReal("start3", start3, NULL, 4 * USLOSS_MIN_STACK, 3);
 
-    // wait for start3 to finish
+    // Wait for start3 to finish
     int status;
     pid = waitReal(&status);
 }
@@ -89,6 +61,17 @@ void nullsys3(systemArgs *arg)
 // TODO: Implement
 void spawn(systemArgs *arg)
 {
+    if (arg->number != SYS_SPAWN)
+    {
+        USLOSS_Console("spawn(): Called with wrong syscall number.\n");
+        USLOSS_Halt(1);
+    }
+
+    int (*startFunc)(char *) = (int (*)) arg->arg1;
+    char *startArgs = (char *) arg->arg2;
+    int stackSize = (int) arg->arg3;
+    int priority = (int) arg->arg4;
+    char *name = (char *) arg->arg5;
 }
 
 // TODO: Implement
