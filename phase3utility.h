@@ -3,6 +3,7 @@
 
 extern void genericSemaphoreInitialization();
 extern int isSemAvailable();
+extern int doesGivenSemExist(int);
 extern int getAvailableSemHandle();
 extern void initSem(int, int);
 extern int freeSem(int);

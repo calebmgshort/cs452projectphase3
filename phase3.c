@@ -41,6 +41,7 @@ void nullsys3(systemArgs *);
 int spawnReal(char *, int (*)(char *), char *, int, int);
 int waitReal(int *);
 int semCreateReal(int);
+int semFreeReal(int);
 void terminateReal(int);
 
 // Other prototypes
@@ -192,7 +193,7 @@ void semCreate(systemArgs *args)
         {
             USLOSS_Console("semCreate(): process was zapped");
         }
-        terminateReal(0)
+        terminateReal(0);
     }
     setToUserMode();
 }
@@ -388,7 +389,7 @@ int semFreeReal(int semHandle)
     }
     int returnStatus = 0;
     lock(semsMbox);
-    if(Semaphores[i].firstBlockedProc != NULL)
+    if(Semaphores[semHandle].firstBlockedProc != NULL)
     {
         returnStatus = 1;
     }
