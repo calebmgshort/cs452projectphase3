@@ -15,6 +15,9 @@ semaphore Semaphores[MAXSEMS];
 // The phase 3 proc table
 userProc ProcTable[MAXPROCS];
 
+// Mutex box for the proc table
+int ProcTableMutex = MboxCreate(1, 0)
+
 int start2(char *arg)
 {
     if (DEBUG3 && debugflag3)
@@ -58,7 +61,6 @@ void nullsys3(systemArgs *arg)
 {
 }
 
-// TODO: Implement
 void spawn(systemArgs *arg)
 {
     if (arg->number != SYS_SPAWN)
@@ -72,6 +74,26 @@ void spawn(systemArgs *arg)
     int stackSize = (int) arg->arg3;
     int priority = (int) arg->arg4;
     char *name = (char *) arg->arg5;
+
+    int result = spawnReal(name, startFunc, stackSize, startArgs, priority);
+    arg->arg1 = (void *) result;
+    arg->arg4 = (void *) 0;
+    if (result < 0)
+    {
+        if (DEBUG3 && debugflag3)
+        {
+            USLOSS_Console("spawn(): call to spawnReal did not create a process.\n");
+        }
+        arg->arg1 = (void *) -1;
+    }
+    if (result == -2)
+    {
+        if (DEBUG3 && debugflag3)
+        {
+            USLOSS_Console("spawn(): arguments were invalid.\n");
+        }
+        arg->arg4 = (void *) -1;
+    }
 }
 
 // TODO: Implement
@@ -142,8 +164,37 @@ void getPID(systemArgs *args)
 }
 
 /******************** Real Functions ******************/
+/*
+ * Calls fork1 to create a process running spawnLaunch with the supplied args.
+ * spawnLaunch then changes into user mode and calls the supplied function.
+ * Returns -2 if an argument is invalid. Returns -1 if all args were valid, yet
+ * no process was created. Returns the pid of the created proc otherwise. Must
+ * be called in kernel mode for fork1 to complete.
+ */
 int spawnReal(char *name, int (*startFunc)(char *), char *args, int stackSize, int priority)
 {
+    // Check params
+    if (name == NULL || strlen(name) >= (MAXNAME - 1))
+    {
+        return -2;
+    }
+    if (stackSize < USLOSS_MIN_STACK)
+    {
+        return -2;
+    }
+    if (strlen(args) >= (MAXARG - 1))
+    {
+        return -2;
+    }
+    if (priority < 1 || priority >= SENTINTELPRIORITY)
+    {
+        return -2;
+    }
+    if (startFunc == NULL)
+    {
+        return -2;
+    }
+
     // Create a mailbox for synchronization with spawnLaunch
     int mbox = MboxCreate(0, MAX_MESSAGE);
 
@@ -153,12 +204,19 @@ int spawnReal(char *name, int (*startFunc)(char *), char *args, int stackSize, i
 
     // Fork a new process
     int pid = fork1(name, spawnLaunch, buf, stackSize, priority);
+    if (pid < 0)
+    {
+        MboxRelease(mbox);
+        return -1;
+    }
 
     // Setup the proc table for the new proc
+    lock(ProcTableMutex);
     userProcPtr proc = &ProcTable[pid % MAXPROCS];
     proc->pid = pid;
     proc->args = args;
     proc->startFunc = startFunc;
+    unlock(ProcTableMutex);
 
     // Let spawnLaunch execute and release the mailbox
     MboxSend(mbox, NULL, 0);
@@ -180,11 +238,13 @@ int spawnLaunch(char *arg)
     setToUserMode();
 
     // Call the start func and capture return value
+    lock(ProcTableMutex);
     userProcPtr proc = &ProcTable[getpid() % MAXPROCS];
     int status = proc->startFunc(proc->args);
+    unlock(ProcTableMutex);
 
     // Terminate
-    terminateReal(status);
+    Terminate(status);
     return 0;
 }
 

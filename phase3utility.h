@@ -4,5 +4,6 @@
 extern int isSemAvailable();
 extern int getAvailableSemHandle();
 extern void initSem(int, int);
-
+extern void lock(int);
+extern void unlock(int);
 #endif
