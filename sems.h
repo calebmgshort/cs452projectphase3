@@ -2,6 +2,7 @@
 #define _PHASE3PROC_H
 
 #include <usloss.h>
+#include <usyscall.h>
 
 #define DEBUG3 1
 

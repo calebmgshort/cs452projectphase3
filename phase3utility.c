@@ -1,3 +1,7 @@
+#include <usyscall.h>
+#include <stdlib.h>
+#include "phase2.h"
+
 /*
  *  Determines if there is an available slot in the sem table
  *  Returns: 1 if yes, 0 if no
