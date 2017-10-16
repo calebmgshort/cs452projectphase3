@@ -1,10 +1,14 @@
 #include <usloss.h>
 #include <usyscall.h>
-
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include "phase1.h"
 #include "phase2.h"
 #include "phase3.h"
 #include "sems.h"
+#include "libuser.h"
+#include "phase3utility.c"
 
 // Debugging flag
 int debugflag3 = 0;
@@ -13,11 +17,33 @@ int debugflag3 = 0;
 semaphore Semaphores[MAXSEMS];
 
 // The phase 3 proc table
-userProc ProcTable[MAXPROCS];
+userProc ProcTable[MAXPROC];
 
 // Mutex box for the proc table
-int ProcTableMutex = MboxCreate(1, 0)
+int ProcTableMutex;
 
+// Prototypes for syscall handlers
+void spawn(systemArgs *);
+void wait(systemArgs *);
+void terminate(systemArgs *);
+void semCreate(systemArgs *);
+void semP(systemArgs *);
+void semV(systemArgs *);
+void semFree(systemArgs *);
+void getTimeOfDay(systemArgs *);
+void cpuTime(systemArgs *);
+void getPID(systemArgs *);
+void nullsys3(systemArgs *);
+
+// Prototypes for "Real" functions
+int spawnReal(char *, int (*)(char *), char *, int, int);
+int waitReal(int *);
+int semCreateReal(int);
+void terminateReal(int);
+
+// Other prototypes
+extern int start3(char *);
+int spawnLaunch(char *);
 int start2(char *arg)
 {
     if (DEBUG3 && debugflag3)
@@ -32,7 +58,7 @@ int start2(char *arg)
     }
 
     // Initialize system call vector
-    for (int i = 0; i < MAXSYSCALL; i++)
+    for (int i = 0; i < MAXSYSCALLS; i++)
     {
         systemCallVec[i] = nullsys3;
     }
@@ -47,13 +73,27 @@ int start2(char *arg)
     systemCallVec[SYS_CPUTIME] = cpuTime;
     systemCallVec[SYS_GETPID] = getPID;
 
+    // Create the mutex mailbox for the proc table
+    ProcTableMutex = MboxCreate(1, 0);
+
     // Create first user-level process and wait for it to finish.
     // Here, we only call spawnReal(), since we are already in kernel mode.
     int pid = spawnReal("start3", start3, NULL, 4 * USLOSS_MIN_STACK, 3);
+    if (pid < 0)
+    {
+        USLOSS_Console("start2(): Could not create start3().  Halting...\n");
+        USLOSS_Halt(1);
+    }
 
     // Wait for start3 to finish
     int status;
-    pid = waitReal(&status);
+    int result = waitReal(&status);
+    if (result != pid)
+    {
+        USLOSS_Console("start2(): wait return a process other than start3().  Halting...\n");
+        USLOSS_Halt(1);
+    }
+    return 0;
 }
 
 // TODO: Implement
@@ -69,13 +109,13 @@ void spawn(systemArgs *arg)
         USLOSS_Halt(1);
     }
 
-    int (*startFunc)(char *) = (int (*)) arg->arg1;
+    int (*startFunc)(char *) = (int (*)(char *)) arg->arg1;
     char *startArgs = (char *) arg->arg2;
-    int stackSize = (int) arg->arg3;
-    int priority = (int) arg->arg4;
+    int stackSize = (int) ((long) arg->arg3);
+    int priority = (int) ((long) arg->arg4);
     char *name = (char *) arg->arg5;
 
-    int result = spawnReal(name, startFunc, stackSize, startArgs, priority);
+    long result = spawnReal(name, startFunc, startArgs, stackSize, priority);
     arg->arg1 = (void *) result;
     arg->arg4 = (void *) 0;
     if (result < 0)
@@ -109,26 +149,26 @@ void terminate(systemArgs *args)
 // TODO: Implement
 void semCreate(systemArgs *args)
 {
-    int initSemValue = (int) args->arg1;
+    int initSemValue = (int) ((long) args->arg1);
     if(initSemValue < 0)    // Initial Sem value is invalid
     {
-        args->arg4 = -1;
+        args->arg4 = (void *) -1;
         return;
     }
     if(!isSemAvailable()) // TODO: Implement this function
     {
-        args->arg4 = -1;
+        args->arg4 = (void *) -1;
         return;
     }
 
-    int semID = semCreateReal(initSemValue);
+    long semID = semCreateReal(initSemValue);
 
-    systemArgs->arg1 = (void*) semID;
-    systemArgs->arg4 = (void*) 0;
+    args->arg1 = (void *) semID;
+    args->arg4 = (void *) 0;
 
     if(isZapped())
     {
-        terminateReal();  // TODO: does terminate take an input?
+        terminateReal(0);  // TODO: does terminate take an input?
     }
     setToUserMode();
 }
@@ -186,7 +226,7 @@ int spawnReal(char *name, int (*startFunc)(char *), char *args, int stackSize, i
     {
         return -2;
     }
-    if (priority < 1 || priority >= SENTINTELPRIORITY)
+    if (priority < 1 || priority > 5)
     {
         return -2;
     }
@@ -212,7 +252,7 @@ int spawnReal(char *name, int (*startFunc)(char *), char *args, int stackSize, i
 
     // Setup the proc table for the new proc
     lock(ProcTableMutex);
-    userProcPtr proc = &ProcTable[pid % MAXPROCS];
+    userProcPtr proc = &ProcTable[pid % MAXPROC];
     proc->pid = pid;
     proc->args = args;
     proc->startFunc = startFunc;
@@ -232,14 +272,14 @@ int spawnLaunch(char *arg)
     int mboxID = atoi(arg);
 
     // Wait for spawnReal to finish setting up the proc table
-    MboxReceive(mbox, NULL, 0);
+    MboxReceive(mboxID, NULL, 0);
 
     // Change the process into user mode
     setToUserMode();
 
     // Call the start func and capture return value
     lock(ProcTableMutex);
-    userProcPtr proc = &ProcTable[getpid() % MAXPROCS];
+    userProcPtr proc = &ProcTable[getpid() % MAXPROC];
     int status = proc->startFunc(proc->args);
     unlock(ProcTableMutex);
 
@@ -249,17 +289,18 @@ int spawnLaunch(char *arg)
 }
 
 // TODO: Implement
-void waitReal()
+int waitReal(int *status)
+{
+    return -1;
+}
+
+// TODO: Implement
+void terminateReal(int status)
 {
 }
 
 // TODO: Implement
-void terminateReal()
-{
-}
-
-// TODO: Implement
-void semCreateReal(int initSemValue)
+int semCreateReal(int initSemValue)
 {
     int semHandle = getAvailableSemHandle();  // TODO: implement
     initSem(semHandle, initSemValue);         // TODO: implement

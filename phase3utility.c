@@ -4,7 +4,7 @@
  */
 int isSemAvailable()
 {
-
+    return -1;
 }
 
 /*
@@ -13,7 +13,7 @@ int isSemAvailable()
  */
 int getAvailableSemHandle()
 {
-
+    return -1;
 }
 
 /*
@@ -27,7 +27,7 @@ void initSem(int semHandle, int initSemValue)
 /*
  * Acquires the lock for the given mutex mailbox.
  */
-int lock(int mutexMbox)
+void lock(int mutexMbox)
 {
     int result = MboxSend(mutexMbox, NULL, 0);
     if (result == -3)
@@ -39,11 +39,16 @@ int lock(int mutexMbox)
 /*
  * Releases the lock for the given mutex mailbox.
  */
-int unlock(int mutexMbox)
+void unlock(int mutexMbox)
 {
     int result = MboxReceive(mutexMbox, NULL, 0);
     if (result == -3)
     {
         // TODO what to do if we've been zapped?
     }
+}
+
+void setToUserMode()
+{
+    // TODO
 }

@@ -6,4 +6,5 @@ extern int getAvailableSemHandle();
 extern void initSem(int, int);
 extern void lock(int);
 extern void unlock(int);
+extern void setToUserMode();
 #endif

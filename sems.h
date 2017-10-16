@@ -1,10 +1,15 @@
 #ifndef _PHASE3PROC_H
 #define _PHASE3PROC_H
 
+#include <usloss.h>
+
+#define DEBUG3 1
+
 typedef struct userProc  * userProcPtr;
 typedef struct userProc    userProc;
 typedef struct semaphore * semaphorePtr;
 typedef struct semaphore   semaphore;
+typedef USLOSS_Sysargs     systemArgs;
 
 struct userProc
 {

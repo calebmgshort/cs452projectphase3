@@ -5,12 +5,11 @@
  *                to the OS kernel support package.
  *
  */
-
+#include <usloss.h>
 #include <phase1.h>
 #include <phase2.h>
 #include <libuser.h>
 #include <usyscall.h>
-#include <usloss.h>
 
 #define CHECKMODE {    \
     if (USLOSS_PsrGet() & USLOSS_PSR_CURRENT_MODE) { \
