@@ -5,12 +5,15 @@
 #include "phase2.h"
 #include "phase3.h"
 #include "sems.h"
+#include "phase3utility.h"
 
 // Debugging flag
 int debugflag3 = 0;
 
 // The sems table
 semaphore Semaphores[MAXSEMS];
+int currentNumSems = 0;
+int semsMbox;
 
 // The phase 3 proc table
 userProc ProcTable[MAXPROCS];
@@ -46,6 +49,9 @@ int start2(char *arg)
     systemCallVec[SYS_GETTIMEOFDAY] = getTimeOfDay;
     systemCallVec[SYS_CPUTIME] = cpuTime;
     systemCallVec[SYS_GETPID] = getPID;
+
+    // Initialize the semaphore table
+    genericSemaphoreInitialization();
 
     // Create first user-level process and wait for it to finish.
     // Here, we only call spawnReal(), since we are already in kernel mode.
@@ -106,21 +112,36 @@ void terminate(systemArgs *args)
 {
 }
 
-// TODO: Implement
+
 void semCreate(systemArgs *args)
 {
+    if(DEBUG3 && debugflag3)
+    {
+        USLOSS_Console("semCreate(): called");
+    }
+
     int initSemValue = (int) args->arg1;
+    // Error checking
     if(initSemValue < 0)    // Initial Sem value is invalid
     {
+        if(DEBUG3 && debugflag3)
+        {
+            USLOSS_Console("semCreate(): The given initial sem value %d is invalid", initSemValue);
+        }
         args->arg4 = -1;
         return;
     }
-    if(!isSemAvailable()) // TODO: Implement this function
+    if(!isSemAvailable())
     {
+        if(DEBUG3 && debugflag3)
+        {
+            USLOSS_Console("semCreate(): There are no more semaphores available");
+        }
         args->arg4 = -1;
         return;
     }
 
+    // Normal case
     int semID = semCreateReal(initSemValue);
 
     systemArgs->arg1 = (void*) semID;
@@ -128,7 +149,11 @@ void semCreate(systemArgs *args)
 
     if(isZapped())
     {
-        terminateReal();  // TODO: does terminate take an input?
+        if(DEBUG3 && debugflag3)
+        {
+            USLOSS_Console("semCreate(): process was zapped");
+        }
+        terminateReal();  // TODO: fix this call
     }
     setToUserMode();
 }
@@ -146,6 +171,37 @@ void semV(systemArgs *args)
 // TODO: Implement
 void semFree(systemArgs *args)
 {
+    if(DEBUG3 && debugflag3)
+    {
+        USLOSS_Console("semFree(): called");
+    }
+
+    int semHandle = (int) args->arg1;
+    // Error checking
+    if(!doesGivenSemExist(semHandle))
+    {
+        if(DEBUG3 && debugflag3)
+        {
+            USLOSS_Console("semFree(): The semaphore with id %d does not exist", semHandle);
+        }
+        args->arg4 = -1;
+        return;
+    }
+
+    // Normal case
+    int status = semFreeReal(semHandle);
+
+    systemArgs->arg4 = (void*) status;
+
+    if(isZapped())
+    {
+        if(DEBUG3 && debugflag3)
+        {
+            USLOSS_Console("semFree(): process was zapped");
+        }
+        terminateReal();  // TODO: fix this call
+    }
+    setToUserMode();
 }
 
 // TODO: Implement
@@ -258,13 +314,18 @@ void terminateReal()
 {
 }
 
-// TODO: Implement
+
 void semCreateReal(int initSemValue)
 {
-    int semHandle = getAvailableSemHandle();  // TODO: implement
-    initSem(semHandle, initSemValue);         // TODO: implement
-
-    // TODO: mailbox stuff
+    if(DEBUG3 && debugflag3)
+    {
+        USLOSS_Console("semCreateReal(): called");
+    }
+    // Create the semaphore
+    lock(semsMbox);
+    int semHandle = getAvailableSemHandle();
+    initSem(semHandle, initSemValue);
+    unlock(semsMbox);
 
     return semHandle; // The handle is just the semID
 }
@@ -279,9 +340,22 @@ void semVReal()
 {
 }
 
-// TODO: Implement
-void semFreeReal()
+int semFreeReal(int semHandle)
 {
+    if(DEBUG3 && debugflag3)
+    {
+        USLOSS_Console("semFreeReal(): called");
+    }
+    int returnStatus = 0;
+    lock(semsMbox);
+    if(Semaphores[i].firstBlockedProc != NULL)
+    {
+        returnStatus = 1;
+    }
+    freeSem(semHandle);
+    unlock(semsMbox);
+
+    return returnStatus;
 }
 
 // TODO: Implement
