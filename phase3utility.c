@@ -1,6 +1,9 @@
 #include <usyscall.h>
 #include <stdlib.h>
+#include "phase1.h"
 #include "phase2.h"
+#include "phase3.h"
+#include "sems.h"
 
 /*
  *  A file of utility functions
@@ -8,6 +11,8 @@
 
 extern semaphore Semaphores[MAXSEMS];
 extern int currentNumSems;
+extern int semsMbox;
+extern int debugflag3;
 
 /*
  *  Initialize all semaphore stuff
@@ -51,7 +56,6 @@ int isSemAvailable()
 int getAvailableSemHandle()
 {
     // Return an empty slot in the sem table if one exists
-    int i;
     for(int i = 0; i < MAXSEMS; i++)
     {
         if(Semaphores[i].count != EMPTY)
@@ -76,9 +80,9 @@ int getAvailableSemHandle()
  */
 void initSem(int semHandle, int initSemValue)
 {
-    semaphore sem = Semaphores[semHandle];
-    sem.count = initSemValue;
-    sem.firstBlockedProc = NULL;
+    semaphore *sem = &Semaphores[semHandle];
+    sem->count = initSemValue;
+    sem->firstBlockedProc = NULL;
 }
 
 /*
@@ -97,7 +101,7 @@ void freeSem(int semHandle)
         while(current != NULL){
           next = current->nextBlockedProc;
           current->nextBlockedProc = NULL;
-          zap(current.pid);
+          zap(current->pid);
           // TODO: Put this proc back on the ready list how?
           current = next;
         }

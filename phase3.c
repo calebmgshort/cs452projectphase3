@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+
 #include "phase1.h"
 #include "phase2.h"
 #include "phase3.h"
@@ -11,7 +12,7 @@
 #include "libuser.h"
 
 // Debugging flag
-int debugflag3 = 0;
+int debugflag3 = 1;
 
 // The sems table
 semaphore Semaphores[MAXSEMS];
@@ -26,7 +27,7 @@ int ProcTableMutex;
 
 // Prototypes for syscall handlers
 void spawn(systemArgs *);
-void wait(systemArgs *);
+void waitHandler(systemArgs *);
 void terminate(systemArgs *);
 void semCreate(systemArgs *);
 void semP(systemArgs *);
@@ -66,7 +67,7 @@ int start2(char *arg)
         systemCallVec[i] = nullsys3;
     }
     systemCallVec[SYS_SPAWN] = spawn;
-    systemCallVec[SYS_WAIT] = wait;
+    systemCallVec[SYS_WAIT] = waitHandler;
     systemCallVec[SYS_TERMINATE] = terminate;
     systemCallVec[SYS_SEMCREATE] = semCreate;
     systemCallVec[SYS_SEMP] = semP;
@@ -143,7 +144,7 @@ void spawn(systemArgs *arg)
 }
 
 // TODO: Implement
-void wait(systemArgs *args)
+void waitHandler(systemArgs *args)
 {
 }
 
