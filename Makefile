@@ -1,11 +1,14 @@
-PREFIX = ${HOME}
+PREFIX = /home/theimbichner/Csc452Project/
+LDFLAGS += -L. -L./libraries/linux -L${PREFIX}/lib
+#PREFIX = /Users/Caleb/Documents/ComputerScience/csc452/project/compilefolder#${HOME}
+#LDFLAGS += -L. -L./libraries/osx -L${PREFIX}/lib
 
 TARGET = libphase3.a
 ASSIGNMENT = 452phase3
 CC = gcc
 AR = ar
 
-COBJS = phase3.o libuser.o
+COBJS = phase3.o libuser.o phase3utility.o
 CSRCS = ${COBJS:.o=.c}
 
 PHASE1LIB = patrickphase1
@@ -13,7 +16,7 @@ PHASE2LIB = patrickphase2
 #PHASE1LIB = patrickphase1debug
 #PHASE2LIB = patrickphase2debug
 
-HDRS = sems.h
+HDRS = sems.h phase3utility.h
 
 INCLUDE = ${PREFIX}/include
 
@@ -24,8 +27,6 @@ UNAME := $(shell uname -s)
 ifeq ($(UNAME), Darwin)
         CFLAGS += -D_XOPEN_SOURCE
 endif
-
-LDFLAGS += -L. -L${PREFIX}/lib
 
 TESTDIR = testcases
 TESTS = test00 test01 test02 test03 test04 test05 test06 test07 test08 \
@@ -49,5 +50,5 @@ clean:
 phase3.o:	sems.h
 
 submit: $(CSRCS) $(HDRS) Makefile
-	tar cvzf phase3.tgz $(CSRCS) $(HDRS) Makefile
+	tar cvzf phase3.tgz $(CSRCS) $(HDRS) Makefile p1.c
 
