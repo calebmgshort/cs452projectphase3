@@ -5,12 +5,11 @@
  *                to the OS kernel support package.
  *
  */
-
+#include <usloss.h>
+#include <usyscall.h>
 #include <phase1.h>
 #include <phase2.h>
 #include <libuser.h>
-#include <usyscall.h>
-#include <usloss.h>
 
 #define CHECKMODE {    \
     if (USLOSS_PsrGet() & USLOSS_PSR_CURRENT_MODE) { \
@@ -44,14 +43,14 @@ int Spawn(char *name, int (*func)(char *), char *arg, int stack_size,
     sysArg.number = SYS_SPAWN;
     sysArg.arg1 = (void *) func;
     sysArg.arg2 = arg;
-    sysArg.arg3 = (void *) stack_size;
-    sysArg.arg4 = (void *) priority;
+    sysArg.arg3 = (void *) ((long) stack_size);
+    sysArg.arg4 = (void *) ((long) priority);
     sysArg.arg5 = name;
 
     USLOSS_Syscall(&sysArg);
 
-    *pid = (int) sysArg.arg1;
-    return (int) sysArg.arg4;
+    *pid = (int) ((long) sysArg.arg1);
+    return (int) ((long) sysArg.arg4);
 } /* end of Spawn */
 
 
@@ -77,9 +76,9 @@ int Wait(int *pid, int *status)
 
     USLOSS_Syscall(&sysArg);
 
-    *pid = (int) sysArg.arg1;
-    *status = (int) sysArg.arg2;
-    return (int) sysArg.arg4;
+    *pid = (int) ((long) sysArg.arg1);
+    *status = (int) ((long) sysArg.arg2);
+    return (int) ((long) sysArg.arg4);
 
 } /* end of Wait */
 
@@ -98,7 +97,7 @@ void Terminate(int status)
 
   CHECKMODE;
   sysArg.number = SYS_TERMINATE;
-  sysArg.arg1 = (void *) status;
+  sysArg.arg1 = (void *) ((long) status);
 
   USLOSS_Syscall(&sysArg);
 
@@ -119,12 +118,12 @@ int SemCreate(int value, int *semaphore)
 
     CHECKMODE;
     sysArg.number = SYS_SEMCREATE;
-    sysArg.arg1 = (void *) value;
+    sysArg.arg1 = (void *) ((long) value);
 
     USLOSS_Syscall(&sysArg);
 
-    *semaphore = (int) sysArg.arg1;
-    return (int) sysArg.arg4;
+    *semaphore = (int) ((long) sysArg.arg1);
+    return (int) ((long) sysArg.arg4);
 } /* end of SemCreate */
 
 
@@ -142,11 +141,11 @@ int SemP(int semaphore)
 
     CHECKMODE;
     sysArg.number = SYS_SEMP;
-    sysArg.arg1 = (void *) semaphore;
+    sysArg.arg1 = (void *) ((long) semaphore);
 
     USLOSS_Syscall(&sysArg);
 
-    return (int) sysArg.arg4;
+    return (int) ((long) sysArg.arg4);
 } /* end of SemP */
 
 
@@ -164,11 +163,11 @@ int SemV(int semaphore)
 
     CHECKMODE;
     sysArg.number = SYS_SEMV;
-    sysArg.arg1 = (void *) semaphore;
+    sysArg.arg1 = (void *) ((long) semaphore);
 
     USLOSS_Syscall(&sysArg);
 
-    return (int) sysArg.arg4;
+    return (int) ((long) sysArg.arg4);
 } /* end of SemV */
 
 
@@ -186,11 +185,11 @@ int SemFree(int semaphore)
 
     CHECKMODE;
     sysArg.number = SYS_SEMFREE;
-    sysArg.arg1 = (void *) semaphore;
+    sysArg.arg1 = (void *) ((long) semaphore);
 
     USLOSS_Syscall(&sysArg);
 
-    return (int) sysArg.arg4;
+    return (int) ((long) sysArg.arg4);
 } /* end of SemFree */
 
 
@@ -211,7 +210,7 @@ void GetTimeofDay(int *tod)
 
     USLOSS_Syscall(&sysArg);
 
-    *tod = (int) sysArg.arg1;
+    *tod = (int) ((long) sysArg.arg1);
 
 } /* end of GetTimeofDay */
 
@@ -233,7 +232,7 @@ void CPUTime(int *cpu)
 
     USLOSS_Syscall(&sysArg);
 
-    *cpu = (int) sysArg.arg1;
+    *cpu = (int) ((long) sysArg.arg1);
 } /* end of CPUTime */
 
 
@@ -254,7 +253,7 @@ void GetPID(int *pid)
 
     USLOSS_Syscall(&sysArg);
 
-    *pid = (int) sysArg.arg1;
+    *pid = (int) ((long)sysArg.arg1);
 } /* end of GetPID */
 
 /* end libuser.c */

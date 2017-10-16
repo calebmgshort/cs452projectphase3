@@ -8,4 +8,5 @@ extern void initSem(int, int);
 extern int freeSem(int);
 extern void lock(int);
 extern void unlock(int);
+extern void setToUserMode();
 #endif

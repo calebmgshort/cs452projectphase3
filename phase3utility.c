@@ -1,3 +1,7 @@
+#include <usyscall.h>
+#include <stdlib.h>
+#include "phase2.h"
+
 /*
  *  A file of utility functions
  */
@@ -143,4 +147,9 @@ void unlock(int mutexMbox)
     {
         // TODO what to do if we've been zapped?
     }
+}
+
+void setToUserMode()
+{
+    // TODO
 }
