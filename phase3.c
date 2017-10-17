@@ -596,6 +596,15 @@ void semPReal(int semHandle)
             USLOSS_Console("semPReal(): error calling send on blockingMbox\n");
         }
     }
+    if(sem->count == EMPTY)
+    {
+        if(DEBUG3 && debugflag3)
+        {
+            USLOSS_Console("semPReal(): semaphore was freed. Now terminating. \n");
+        }
+        // This semaphore was freed, so terminate
+        terminateReal(0);
+    }
 }
 
 
