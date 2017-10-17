@@ -12,7 +12,7 @@
 #include "libuser.h"
 
 // Debugging flag
-int debugflag3 = 1;
+int debugflag3 = 0;
 
 // The sems table
 semaphore Semaphores[MAXSEMS];
@@ -48,6 +48,7 @@ void terminateReal(int);
 // Other prototypes
 extern int start3(char *);
 int spawnLaunch(char *);
+
 int start2(char *arg)
 {
     if (DEBUG3 && debugflag3)
@@ -59,9 +60,14 @@ int start2(char *arg)
     if (!(USLOSS_PsrGet() & USLOSS_PSR_CURRENT_MODE))
     {
         USLOSS_Console("start2(): Called from user mode.  Halting...\n");
+        USLOSS_Halt(1);
     }
 
     // Initialize system call vector
+    if (DEBUG3 && debugflag3)
+    {
+        USLOSS_Console("start2(): Initializing syscall vector.\n");
+    }
     for (int i = 0; i < MAXSYSCALLS; i++)
     {
         systemCallVec[i] = nullsys3;
@@ -78,12 +84,25 @@ int start2(char *arg)
     systemCallVec[SYS_GETPID] = getPID;
 
     // Initialize the semaphore table and related items
+    if (DEBUG3 && debugflag3)
+    {
+        USLOSS_Console("start2(): Initializing semaphore table.\n");
+    }
     genericSemaphoreInitialization();
 
     // Create the mutex mailbox for the proc table
+    if (DEBUG3 && debugflag3)
+    {
+        USLOSS_Console("start2(): Creating mailboxes for mutual exclusion.\n");
+    }
     ProcTableMutex = MboxCreate(1, 0);
 
     // Create first user-level process and wait for it to finish.
+    if (DEBUG3 && debugflag3)
+    {
+        USLOSS_Console("start2(): Spawning start3 in user mode.\n");
+    }
+
     // Here, we only call spawnReal(), since we are already in kernel mode.
     int pid = spawnReal("start3", start3, NULL, 4 * USLOSS_MIN_STACK, 3);
     if (pid < 0)
@@ -93,11 +112,15 @@ int start2(char *arg)
     }
 
     // Wait for start3 to finish
+    if (DEBUG3 && debugflag3)
+    {
+        USLOSS_Console("start2(): Waiting for start3().\n");
+    }
     int status;
     int result = waitReal(&status);
     if (result != pid)
     {
-        USLOSS_Console("start2(): wait return a process other than start3().  Halting...\n");
+        USLOSS_Console("start2(): Wait returned a process other than start3().  Halting...\n");
         USLOSS_Halt(1);
     }
     return 0;
@@ -110,19 +133,24 @@ void nullsys3(systemArgs *arg)
 
 void spawn(systemArgs *arg)
 {
+    // Check the syscall number
     if (arg->number != SYS_SPAWN)
     {
         USLOSS_Console("spawn(): Called with wrong syscall number.\n");
         USLOSS_Halt(1);
     }
 
+    // Unpack the args
     int (*startFunc)(char *) = (int (*)(char *)) arg->arg1;
     char *startArgs = (char *) arg->arg2;
     int stackSize = (int) ((long) arg->arg3);
     int priority = (int) ((long) arg->arg4);
     char *name = (char *) arg->arg5;
 
+    // Call spawnReal
     long result = spawnReal(name, startFunc, startArgs, stackSize, priority);
+
+    // Unpack the return values
     arg->arg1 = (void *) result;
     arg->arg4 = (void *) 0;
     if (result < 0)
@@ -141,18 +169,59 @@ void spawn(systemArgs *arg)
         }
         arg->arg4 = (void *) -1;
     }
+
+    // Check if we've been zapped
+    if (isZapped())
+    {
+        terminateReal(0);
+    }
+
+    // Set to user mode
+    setToUserMode();
 }
 
-// TODO: Implement
 void waitHandler(systemArgs *args)
 {
+    // Check the syscall number
+    if (args->number != SYS_WAIT)
+    {
+        USLOSS_Console("wait(): Called with wrong syscall number.\n");
+        USLOSS_Halt(1);
+    }
+
+    // Call waitReal
+    int status;
+    long result = waitReal(&status);
+
+    // Unpack the return values
+    args->arg1 = (void *) result;
+    args->arg2 = (void *) ((long) status);
+
+    // Check if we've been zapped
+    if (isZapped())
+    {
+        terminateReal(0);
+    }
+
+    // Set to user mode
+    setToUserMode();
 }
 
-// TODO: Implement
 void terminate(systemArgs *args)
 {
-}
+    // Check the syscall number
+    if (args->number != SYS_TERMINATE)
+    {
+        USLOSS_Console("terminate(): Called with wrong syscall number.\n");
+        USLOSS_Halt(1);
+    }
 
+    // Unpack arguments
+    int status = (int) ((long) args->arg1);
+
+    // Call terminateReal
+    terminateReal(status);
+}
 
 void semCreate(systemArgs *args)
 {
@@ -270,6 +339,11 @@ void getPID(systemArgs *args)
  */
 int spawnReal(char *name, int (*startFunc)(char *), char *args, int stackSize, int priority)
 {
+    if (DEBUG3 && debugflag3)
+    {
+        USLOSS_Console("spawnReal(): Called.\n");
+    }
+
     // Check params
     if (name == NULL || strlen(name) >= (MAXNAME - 1))
     {
@@ -279,7 +353,7 @@ int spawnReal(char *name, int (*startFunc)(char *), char *args, int stackSize, i
     {
         return -2;
     }
-    if (strlen(args) >= (MAXARG - 1))
+    if (args != NULL && strlen(args) >= (MAXARG - 1))
     {
         return -2;
     }
@@ -293,6 +367,10 @@ int spawnReal(char *name, int (*startFunc)(char *), char *args, int stackSize, i
     }
 
     // Create a mailbox for synchronization with spawnLaunch
+    if (DEBUG3 && debugflag3)
+    {
+        USLOSS_Console("spawnReal(): Creating a mailbox for communication with spawnLaunch.\n");
+    }
     int mbox = MboxCreate(0, MAX_MESSAGE);
 
     // Convert the mboxID into a string
@@ -300,6 +378,10 @@ int spawnReal(char *name, int (*startFunc)(char *), char *args, int stackSize, i
     sprintf(buf, "%d", mbox);
 
     // Fork a new process
+    if (DEBUG3 && debugflag3)
+    {
+        USLOSS_Console("spawnReal(): Calling fork1().\n");
+    }
     int pid = fork1(name, spawnLaunch, buf, stackSize, priority);
     if (pid < 0)
     {
@@ -308,6 +390,10 @@ int spawnReal(char *name, int (*startFunc)(char *), char *args, int stackSize, i
     }
 
     // Setup the proc table for the new proc
+    if (DEBUG3 && debugflag3)
+    {
+        USLOSS_Console("spawnReal(): Writing information to process table for proc %d.\n", pid);
+    }
     lock(ProcTableMutex);
     userProcPtr proc = &ProcTable[pid % MAXPROC];
     proc->pid = pid;
@@ -316,6 +402,10 @@ int spawnReal(char *name, int (*startFunc)(char *), char *args, int stackSize, i
     unlock(ProcTableMutex);
 
     // Let spawnLaunch execute and release the mailbox
+    if (DEBUG3 && debugflag3)
+    {
+        USLOSS_Console("spawnReal(): Coordinating with spawnLaunch for proc %d.\n", pid);
+    }
     MboxSend(mbox, NULL, 0);
     MboxRelease(mbox);
 
@@ -323,6 +413,10 @@ int spawnReal(char *name, int (*startFunc)(char *), char *args, int stackSize, i
     return pid;
 }
 
+/*
+ * Launcher function for user mode procs. Reads the real starting function for
+ * the process from the phase3 ProcTable.
+ */
 int spawnLaunch(char *arg)
 {
     // Unpack the mboxID from args
@@ -331,29 +425,48 @@ int spawnLaunch(char *arg)
     // Wait for spawnReal to finish setting up the proc table
     MboxReceive(mboxID, NULL, 0);
 
-    // Change the process into user mode
-    setToUserMode();
+    if (DEBUG3 && debugflag3)
+    {
+        USLOSS_Console("spawnLaunch(): Coordinating with spawnReal for proc %d.\n", getpid());
+    }
 
-    // Call the start func and capture return value
+    // Read information from the process table
     lock(ProcTableMutex);
     userProcPtr proc = &ProcTable[getpid() % MAXPROC];
-    int status = proc->startFunc(proc->args);
+    char *args = proc->args;
+    int (*startFunc)(char *) = proc->startFunc;
     unlock(ProcTableMutex);
+
+    // Change the process into user mode
+    if (DEBUG3 && debugflag3)
+    {
+        USLOSS_Console("spawnLaunch(): Setting proc %d  to user mode.\n", getpid());
+    }
+    setToUserMode();
+
+    // Call the start func and capture the return value
+    int status = startFunc(args);
 
     // Terminate
     Terminate(status);
     return 0;
 }
 
-// TODO: Implement
+/*
+ * Calls join to wait for a child to quit
+ */
 int waitReal(int *status)
 {
-    return -1;
+    return join(status);
 }
 
-// TODO: Implement
+/*
+ * Calls quit to terminate the running process.
+ */
 void terminateReal(int status)
 {
+    // TODO coordinate with children
+    quit(status);
 }
 
 
