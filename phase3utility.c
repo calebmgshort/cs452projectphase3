@@ -162,6 +162,10 @@ int doesGivenSemExist(int semHandle)
  */
 void lock(int mutexMbox)
 {
+    if (DEBUG3 && debugflag3)
+    {
+        USLOSS_Console("lock(): Acquiring lock for mutex mailbox %d\n", mutexMbox);
+    }
     int result = MboxSend(mutexMbox, NULL, 0);
     if(result == -1)
     {
@@ -178,6 +182,10 @@ void lock(int mutexMbox)
  */
 void unlock(int mutexMbox)
 {
+    if (DEBUG3 && debugflag3)
+    {
+        USLOSS_Console("unlock(): Releasing the lock on mutex mailbox %d\n", mutexMbox);
+    }
     int result = MboxReceive(mutexMbox, NULL, 0);
     if(result == -1)
     {
@@ -189,7 +197,35 @@ void unlock(int mutexMbox)
     }
 }
 
+/*
+ * Sets the current process into user mode. Requires the process to currently
+ * be in kernel mode. Also enables interrupts.
+ */
 void setToUserMode()
 {
-    // TODO
+    if (DEBUG3 && debugflag3)
+    {
+        USLOSS_Console("setToUserMode(): Called\n");
+    }
+    unsigned int psr = USLOSS_PsrGet();
+    if (DEBUG3 && debugflag3)
+    {
+        USLOSS_Console("setToUserMode(): Old psr: %d\n", psr);
+    }
+    if (!(psr & USLOSS_PSR_CURRENT_MODE))
+    {
+        USLOSS_Console("setToUserMode(): Called from user mode.  Halting...\n");
+        USLOSS_Halt(1);
+    }
+    unsigned int newpsr = (psr & ~USLOSS_PSR_CURRENT_MODE) | USLOSS_PSR_CURRENT_INT;
+    if (DEBUG3 && debugflag3)
+    {
+        USLOSS_Console("setToUserMode(): New psr: %d\n", newpsr);
+    }
+    int result = USLOSS_PsrSet(newpsr);
+    if (result != USLOSS_DEV_OK)
+    {
+        USLOSS_Console("setToUserMode(): Bug in psr set.  Halting...\n");
+        USLOSS_Halt(1);
+    }
 }
