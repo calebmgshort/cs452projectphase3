@@ -542,6 +542,7 @@ int semCreateReal(int initSemValue)
     lock(semsMutex);
     int semHandle = getAvailableSemHandle();
     initSem(semHandle, initSemValue);
+    currentNumSems++;
     unlock(semsMutex);
 
     return semHandle; // The handle is just the semID
@@ -610,6 +611,7 @@ int semFreeReal(int semHandle)
     }
     lock(semsMutex);
     int returnStatus = freeSem(semHandle);
+    currentNumSems--;
     unlock(semsMutex);
 
     return returnStatus;
