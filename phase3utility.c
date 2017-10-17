@@ -11,7 +11,7 @@
 
 extern semaphore Semaphores[MAXSEMS];
 extern int currentNumSems;
-extern int semsMbox;
+extern int semsMutex;
 extern int debugflag3;
 
 /*
@@ -24,10 +24,11 @@ void genericSemaphoreInitialization()
     for(i = 0; i < MAXSEMS; i++)
     {
         Semaphores[i].count = EMPTY;
-        Semaphores[i].firstBlockedProc = NULL;
+        Semaphores[i].mutex = EMPTY;
+        Semaphores[i].blockingMbox = EMPTY;
     }
-    semsMbox = MboxCreate(1, 0);
-    if(semsMbox < 0)
+    semsMutex = MboxCreate(1, 0);
+    if(semsMutex < 0)
     {
         USLOSS_Console("genericSemaphoreInitialization(): Error creating mutex for semaphores");
     }
@@ -80,32 +81,59 @@ int getAvailableSemHandle()
  */
 void initSem(int semHandle, int initSemValue)
 {
-    semaphore *sem = &Semaphores[semHandle];
+    semaphorePtr sem = &Semaphores[semHandle];
     sem->count = initSemValue;
-    sem->firstBlockedProc = NULL;
+    int mutex = MboxCreate(1, 0);
+    if(mutex < 0)
+    {
+        USLOSS_Console("genericSemaphoreInitialization(): Error creating mutex for sem");
+    }
+    sem->mutex = mutex;
+    int blockingMbox = MboxCreate(0, 0);
+    if(blockingMbox < 0)
+    {
+        USLOSS_Console("genericSemaphoreInitialization(): Error creating blockingMbox for sem");
+    }
+    sem->blockingMbox = blockingMbox;
 }
 
 /*
  *  Free the semaphore with the given handle
+ *  Returns 1 if 1 or more processes were blocked on this mailbox; 0 otherwise
  */
-void freeSem(int semHandle)
+int freeSem(int semHandle)
 {
-    semaphore sem = Semaphores[semHandle];
-    sem.count = EMPTY;
-    // For each blocked proc, take it off this list, (zap it?) and put it back on the ready list
-    if(sem.firstBlockedProc != NULL)
-    {
-        userProcPtr current = sem.firstBlockedProc;
-        userProcPtr next = NULL;
+    semaphorePtr sem = &Semaphores[semHandle];
+    sem->count = EMPTY;
 
-        while(current != NULL){
-          next = current->nextBlockedProc;
-          current->nextBlockedProc = NULL;
-          zap(current->pid);
-          // TODO: Put this proc back on the ready list how?
-          current = next;
-        }
-        sem.firstBlockedProc = NULL;
+    // Free the mailboxes associated with this semaphore
+    int status = MboxRelease(sem->mutex);
+    if(status == -1)
+    {
+        USLOSS_Console("freeSem(): Error releasing mutex");
+    }
+    sem->mutex = EMPTY;
+
+    // Do a CondReceive to determine if there is at least 1 blocked proc
+    int notReturnStatus = MboxCondReceive(sem->blockingMbox, NULL, 0);
+    if(notReturnStatus == -1)
+    {
+        USLOSS_Console("freeSem(): Error getting blocked proc");
+    }
+    status = MboxRelease(sem->blockingMbox);
+    if(status == -1)
+    {
+        USLOSS_Console("freeSem(): Error releasing blockingMbox");
+    }
+    sem->blockingMbox = EMPTY;
+
+    if(notReturnStatus == 1)
+    {
+        return 0;
+    }
+    else
+    {
+        return 1;
     }
 }
 
@@ -135,6 +163,10 @@ int doesGivenSemExist(int semHandle)
 void lock(int mutexMbox)
 {
     int result = MboxSend(mutexMbox, NULL, 0);
+    if(result == -1)
+    {
+        USLOSS_Console("lock(): error calling send on mutex");
+    }
     if (result == -3)
     {
         // TODO what to do if we've been zapped?
@@ -147,6 +179,10 @@ void lock(int mutexMbox)
 void unlock(int mutexMbox)
 {
     int result = MboxReceive(mutexMbox, NULL, 0);
+    if(result == -1)
+    {
+        USLOSS_Console("unlock(): error calling receive on mutex");
+    }
     if (result == -3)
     {
         // TODO what to do if we've been zapped?

@@ -17,13 +17,13 @@ struct userProc
     int pid;                          // The pid of this process
     int (*startFunc)(char *);         // The function that spawnLaunch will call
     char *args;                       // The arguments to the startFunc
-    userProcPtr nextBlockedProc; // The next proc blocked on the same semaphore as this proc
 };
 
 struct semaphore
 {
     int count;                        // The count on this semaphore
-    userProcPtr firstBlockedProc;     // The first process blocked on this semaphore
+    int mutex;                        // The mutex for this semaphore
+    int blockingMbox;                 // The mailbox used to block processes that called V too soon
 };
 
 #define NO_SLOTS_AVAILABLE -1

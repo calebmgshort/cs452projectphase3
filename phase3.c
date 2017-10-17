@@ -17,7 +17,7 @@ int debugflag3 = 1;
 // The sems table
 semaphore Semaphores[MAXSEMS];
 int currentNumSems = 0;
-int semsMbox;
+int semsMutex;
 
 // The phase 3 proc table
 userProc ProcTable[MAXPROC];
@@ -42,6 +42,8 @@ void nullsys3(systemArgs *);
 int spawnReal(char *, int (*)(char *), char *, int, int);
 int waitReal(int *);
 int semCreateReal(int);
+void semPReal(int);
+void semVReal(int);
 int semFreeReal(int);
 void terminateReal(int);
 
@@ -199,14 +201,74 @@ void semCreate(systemArgs *args)
     setToUserMode();
 }
 
-// TODO: Implement
+
 void semP(systemArgs *args)
 {
+    if(DEBUG3 && debugflag3)
+    {
+        USLOSS_Console("semP(): called");
+    }
+    int semHandle = (int) ((long) args->arg1);
+    // Error checking
+    if(!doesGivenSemExist(semHandle))
+    {
+        if(DEBUG3 && debugflag3)
+        {
+            USLOSS_Console("semP(): The semaphore with id %d does not exist", semHandle);
+        }
+        args->arg4 = (void*) -1;
+        return;
+    }
+
+    // Normal case
+    semPReal(semHandle);
+
+    args->arg4 = (void*) 0;
+
+    if(isZapped())
+    {
+        if(DEBUG3 && debugflag3)
+        {
+            USLOSS_Console("semP(): process was zapped");
+        }
+        terminateReal(0);
+    }
+    setToUserMode();
 }
 
-// TODO: Implement
+
 void semV(systemArgs *args)
 {
+    if(DEBUG3 && debugflag3)
+    {
+        USLOSS_Console("semV(): called");
+    }
+    int semHandle = (int) ((long) args->arg1);
+    // Error checking
+    if(!doesGivenSemExist(semHandle))
+    {
+        if(DEBUG3 && debugflag3)
+        {
+            USLOSS_Console("semV(): The semaphore with id %d does not exist", semHandle);
+        }
+        args->arg4 = (void*) -1;
+        return;
+    }
+
+    // Normal case
+    semVReal(semHandle);
+
+    args->arg4 = (void*) 0;
+
+    if(isZapped())
+    {
+        if(DEBUG3 && debugflag3)
+        {
+            USLOSS_Console("semV(): process was zapped");
+        }
+        terminateReal(0);
+    }
+    setToUserMode();
 }
 
 
@@ -364,22 +426,67 @@ int semCreateReal(int initSemValue)
         USLOSS_Console("semCreateReal(): called");
     }
     // Create the semaphore
-    lock(semsMbox);
+    lock(semsMutex);
     int semHandle = getAvailableSemHandle();
     initSem(semHandle, initSemValue);
-    unlock(semsMbox);
+    unlock(semsMutex);
 
     return semHandle; // The handle is just the semID
 }
 
-// TODO: Implement
-void semPReal()
+
+void semPReal(int semHandle)
 {
+    if(DEBUG3 && debugflag3)
+    {
+        USLOSS_Console("semPReal(): called");
+    }
+    semaphorePtr sem = &Semaphores[semHandle];
+    // lock the mutex for this semaphore
+    lock(sem->mutex);
+    if(sem->count > 0)
+    {
+        sem->count--;
+        // unlock mutex
+        unlock(sem->mutex);
+    }
+    else
+    {
+        // unlock mutex
+        unlock(sem->mutex);
+        // Now block on the blockingMbox
+        int status = MboxSend(sem->blockingMbox, NULL, 0);
+        if(status == -1)
+        {
+            USLOSS_Console("semPReal(): error calling send on blockingMbox");
+        }
+    }
 }
 
-// TODO: Implement
-void semVReal()
+
+void semVReal(int semHandle)
 {
+    if(DEBUG3 && debugflag3)
+    {
+        USLOSS_Console("semVReal(): called");
+    }
+    semaphorePtr sem = &Semaphores[semHandle];
+    // lock the mutex for this semaphore
+    lock(sem->mutex);
+    if(sem->count == 0)
+    {
+        int status = MboxCondReceive(sem->blockingMbox, NULL, 0);
+        if(status == 1)
+        {
+            // There was no message to receive, so increment count
+            sem->count++;
+        }
+    }
+    else
+    {
+        sem->count++;
+    }
+    unlock(sem->mutex);
 }
 
 int semFreeReal(int semHandle)
@@ -388,14 +495,9 @@ int semFreeReal(int semHandle)
     {
         USLOSS_Console("semFreeReal(): called");
     }
-    int returnStatus = 0;
-    lock(semsMbox);
-    if(Semaphores[semHandle].firstBlockedProc != NULL)
-    {
-        returnStatus = 1;
-    }
-    freeSem(semHandle);
-    unlock(semsMbox);
+    lock(semsMutex);
+    int returnStatus = freeSem(semHandle);
+    unlock(semsMutex);
 
     return returnStatus;
 }
