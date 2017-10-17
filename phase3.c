@@ -12,7 +12,7 @@
 #include "libuser.h"
 
 // Debugging flag
-int debugflag3 = 0;
+int debugflag3 = 1;
 
 // The sems table
 semaphore Semaphores[MAXSEMS];
@@ -46,6 +46,7 @@ void semPReal(int);
 void semVReal(int);
 int semFreeReal(int);
 void terminateReal(int);
+int getPIDReal();
 
 // Other prototypes
 extern int start3(char *);
@@ -386,9 +387,29 @@ void cpuTime(systemArgs *args)
 {
 }
 
-// TODO: Implement
 void getPID(systemArgs *args)
 {
+    // Check syscall number
+    if (args->number != SYS_GETPID)
+    {
+        USLOSS_Console("getPID(): Called with wrong syscall number.\n");
+        USLOSS_Halt(1);
+    }
+
+    // Call getPIDReal
+    int pid = getPIDReal();
+
+    // Put return values into args
+    args->arg1 = (void *) ((long) pid);
+
+    // Check if zapped
+    if (isZapped())
+    {
+        terminateReal(0);
+    }
+
+    // Set to user mode
+    setToUserMode();
 }
 
 /******************** Real Functions ******************/
@@ -627,7 +648,7 @@ void cpuTimeReal()
 {
 }
 
-// TODO: Implement
-void getPIDReal()
+int getPIDReal()
 {
+    return getpid();
 }

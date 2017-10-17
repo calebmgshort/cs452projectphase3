@@ -205,12 +205,12 @@ void setToUserMode()
 {
     if (DEBUG3 && debugflag3)
     {
-        USLOSS_Console("setToUserMode(): Called\n");
+//        USLOSS_Console("setToUserMode(): Called\n");
     }
     unsigned int psr = USLOSS_PsrGet();
     if (DEBUG3 && debugflag3)
     {
-        USLOSS_Console("setToUserMode(): Old psr: %d\n", psr);
+//        USLOSS_Console("setToUserMode(): Old psr: %d\n", psr);
     }
     if (!(psr & USLOSS_PSR_CURRENT_MODE))
     {
@@ -220,7 +220,7 @@ void setToUserMode()
     unsigned int newpsr = (psr & ~USLOSS_PSR_CURRENT_MODE) | USLOSS_PSR_CURRENT_INT;
     if (DEBUG3 && debugflag3)
     {
-        USLOSS_Console("setToUserMode(): New psr: %d\n", newpsr);
+//        USLOSS_Console("setToUserMode(): New psr: %d\n", newpsr);
     }
     int result = USLOSS_PsrSet(newpsr);
     if (result != USLOSS_DEV_OK)
