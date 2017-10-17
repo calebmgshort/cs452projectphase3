@@ -127,11 +127,11 @@ int freeSem(int semHandle)
     }
     sem->blockingMbox = EMPTY;
 
-    if(notReturnStatus == 1)
+    if(notReturnStatus == -2)
     {
         return 0;
     }
-    else if(notReturnStatus == 0)
+    else if(notReturnStatus >= 0)
     {
         return 1;
     }

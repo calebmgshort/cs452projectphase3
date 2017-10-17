@@ -12,7 +12,7 @@
 #include "libuser.h"
 
 // Debugging flag
-int debugflag3 = 1;
+int debugflag3 = 0;
 
 // The sems table
 semaphore Semaphores[MAXSEMS];
