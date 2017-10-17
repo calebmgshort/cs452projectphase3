@@ -536,7 +536,7 @@ int semCreateReal(int initSemValue)
 {
     if(DEBUG3 && debugflag3)
     {
-        USLOSS_Console("semCreateReal(): called");
+        USLOSS_Console("semCreateReal(): called\n");
     }
     // Create the semaphore
     lock(semsMutex);
@@ -552,7 +552,7 @@ void semPReal(int semHandle)
 {
     if(DEBUG3 && debugflag3)
     {
-        USLOSS_Console("semPReal(): called");
+        USLOSS_Console("semPReal(): called\n");
     }
     semaphorePtr sem = &Semaphores[semHandle];
     // lock the mutex for this semaphore
@@ -571,7 +571,7 @@ void semPReal(int semHandle)
         int status = MboxSend(sem->blockingMbox, NULL, 0);
         if(status == -1)
         {
-            USLOSS_Console("semPReal(): error calling send on blockingMbox");
+            USLOSS_Console("semPReal(): error calling send on blockingMbox\n");
         }
     }
 }
@@ -581,7 +581,7 @@ void semVReal(int semHandle)
 {
     if(DEBUG3 && debugflag3)
     {
-        USLOSS_Console("semVReal(): called");
+        USLOSS_Console("semVReal(): called\n");
     }
     semaphorePtr sem = &Semaphores[semHandle];
     // lock the mutex for this semaphore
@@ -606,7 +606,7 @@ int semFreeReal(int semHandle)
 {
     if(DEBUG3 && debugflag3)
     {
-        USLOSS_Console("semFreeReal(): called");
+        USLOSS_Console("semFreeReal(): called\n");
     }
     lock(semsMutex);
     int returnStatus = freeSem(semHandle);
