@@ -59,7 +59,7 @@ int getAvailableSemHandle()
     // Return an empty slot in the sem table if one exists
     for(int i = 0; i < MAXSEMS; i++)
     {
-        if(Semaphores[i].count != EMPTY)
+        if(Semaphores[i].count == EMPTY)
         {
             if(DEBUG3 && debugflag3)
             {
