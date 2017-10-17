@@ -131,9 +131,17 @@ int freeSem(int semHandle)
     {
         return 0;
     }
-    else
+    else if(notReturnStatus == 0)
     {
         return 1;
+    }
+    else if(notReturnStatus == -1)
+    {
+        return -1;
+    }
+    else
+    {
+        return -5;
     }
 }
 
