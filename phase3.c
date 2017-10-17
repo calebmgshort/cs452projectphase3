@@ -229,7 +229,7 @@ void semCreate(systemArgs *args)
 {
     if(DEBUG3 && debugflag3)
     {
-        USLOSS_Console("semCreate(): called");
+        USLOSS_Console("semCreate(): called\n");
     }
 
     int initSemValue = (int) ((long) args->arg1);
@@ -238,7 +238,7 @@ void semCreate(systemArgs *args)
     {
         if(DEBUG3 && debugflag3)
         {
-            USLOSS_Console("semCreate(): The given initial sem value %d is invalid", initSemValue);
+            USLOSS_Console("semCreate(): The given initial sem value %d is invalid\n", initSemValue);
         }
         args->arg4 = (void*) -1;
         return;
@@ -247,7 +247,7 @@ void semCreate(systemArgs *args)
     {
         if(DEBUG3 && debugflag3)
         {
-            USLOSS_Console("semCreate(): There are no more semaphores available");
+            USLOSS_Console("semCreate(): There are no more semaphores available\n");
         }
         args->arg4 = (void *) -1;
         return;
@@ -263,7 +263,7 @@ void semCreate(systemArgs *args)
     {
         if(DEBUG3 && debugflag3)
         {
-            USLOSS_Console("semCreate(): process was zapped");
+            USLOSS_Console("semCreate(): process was zapped\n");
         }
         terminateReal(0);
     }
@@ -275,7 +275,7 @@ void semP(systemArgs *args)
 {
     if(DEBUG3 && debugflag3)
     {
-        USLOSS_Console("semP(): called");
+        USLOSS_Console("semP(): called\n");
     }
     int semHandle = (int) ((long) args->arg1);
     // Error checking
@@ -283,7 +283,7 @@ void semP(systemArgs *args)
     {
         if(DEBUG3 && debugflag3)
         {
-            USLOSS_Console("semP(): The semaphore with id %d does not exist", semHandle);
+            USLOSS_Console("semP(): The semaphore with id %d does not exist\n", semHandle);
         }
         args->arg4 = (void*) -1;
         return;
@@ -298,7 +298,7 @@ void semP(systemArgs *args)
     {
         if(DEBUG3 && debugflag3)
         {
-            USLOSS_Console("semP(): process was zapped");
+            USLOSS_Console("semP(): process was zapped\n");
         }
         terminateReal(0);
     }
@@ -310,7 +310,7 @@ void semV(systemArgs *args)
 {
     if(DEBUG3 && debugflag3)
     {
-        USLOSS_Console("semV(): called");
+        USLOSS_Console("semV(): called\n");
     }
     int semHandle = (int) ((long) args->arg1);
     // Error checking
@@ -318,7 +318,7 @@ void semV(systemArgs *args)
     {
         if(DEBUG3 && debugflag3)
         {
-            USLOSS_Console("semV(): The semaphore with id %d does not exist", semHandle);
+            USLOSS_Console("semV(): The semaphore with id %d does not exist\n", semHandle);
         }
         args->arg4 = (void*) -1;
         return;
@@ -333,7 +333,7 @@ void semV(systemArgs *args)
     {
         if(DEBUG3 && debugflag3)
         {
-            USLOSS_Console("semV(): process was zapped");
+            USLOSS_Console("semV(): process was zapped\n");
         }
         terminateReal(0);
     }
@@ -345,7 +345,7 @@ void semFree(systemArgs *args)
 {
     if(DEBUG3 && debugflag3)
     {
-        USLOSS_Console("semFree(): called");
+        USLOSS_Console("semFree(): called\n");
     }
 
     int semHandle = (int) ((long) args->arg1);
@@ -354,7 +354,7 @@ void semFree(systemArgs *args)
     {
         if(DEBUG3 && debugflag3)
         {
-            USLOSS_Console("semFree(): The semaphore with id %d does not exist", semHandle);
+            USLOSS_Console("semFree(): The semaphore with id %d does not exist\n", semHandle);
         }
         args->arg4 = (void*) -1;
         return;
@@ -369,7 +369,7 @@ void semFree(systemArgs *args)
     {
         if(DEBUG3 && debugflag3)
         {
-            USLOSS_Console("semFree(): process was zapped");
+            USLOSS_Console("semFree(): process was zapped\n");
         }
         terminateReal(0);
     }

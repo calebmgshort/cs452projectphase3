@@ -30,7 +30,7 @@ void genericSemaphoreInitialization()
     semsMutex = MboxCreate(1, 0);
     if(semsMutex < 0)
     {
-        USLOSS_Console("genericSemaphoreInitialization(): Error creating mutex for semaphores");
+        USLOSS_Console("genericSemaphoreInitialization(): Error creating mutex for semaphores\n");
     }
 }
 
@@ -63,7 +63,7 @@ int getAvailableSemHandle()
         {
             if(DEBUG3 && debugflag3)
             {
-                USLOSS_Console("getAvailableSemHandle(): found sem slot %d", i);
+                USLOSS_Console("getAvailableSemHandle(): found sem slot %d\n", i);
             }
             return i;
         }
@@ -71,7 +71,7 @@ int getAvailableSemHandle()
     // Otherwise return the invalid value
     if(DEBUG3 && debugflag3)
     {
-        USLOSS_Console("getAvailableSemHandle(): no slots available");
+        USLOSS_Console("getAvailableSemHandle(): no slots available\n");
     }
     return NO_SLOTS_AVAILABLE;
 }
@@ -86,13 +86,13 @@ void initSem(int semHandle, int initSemValue)
     int mutex = MboxCreate(1, 0);
     if(mutex < 0)
     {
-        USLOSS_Console("genericSemaphoreInitialization(): Error creating mutex for sem");
+        USLOSS_Console("genericSemaphoreInitialization(): Error creating mutex for sem\n");
     }
     sem->mutex = mutex;
     int blockingMbox = MboxCreate(0, 0);
     if(blockingMbox < 0)
     {
-        USLOSS_Console("genericSemaphoreInitialization(): Error creating blockingMbox for sem");
+        USLOSS_Console("genericSemaphoreInitialization(): Error creating blockingMbox for sem\n");
     }
     sem->blockingMbox = blockingMbox;
 }
@@ -110,7 +110,7 @@ int freeSem(int semHandle)
     int status = MboxRelease(sem->mutex);
     if(status == -1)
     {
-        USLOSS_Console("freeSem(): Error releasing mutex");
+        USLOSS_Console("freeSem(): Error releasing mutex\n");
     }
     sem->mutex = EMPTY;
 
@@ -118,12 +118,12 @@ int freeSem(int semHandle)
     int notReturnStatus = MboxCondReceive(sem->blockingMbox, NULL, 0);
     if(notReturnStatus == -1)
     {
-        USLOSS_Console("freeSem(): Error getting blocked proc");
+        USLOSS_Console("freeSem(): Error getting blocked proc\n");
     }
     status = MboxRelease(sem->blockingMbox);
     if(status == -1)
     {
-        USLOSS_Console("freeSem(): Error releasing blockingMbox");
+        USLOSS_Console("freeSem(): Error releasing blockingMbox\n");
     }
     sem->blockingMbox = EMPTY;
 
@@ -169,7 +169,7 @@ void lock(int mutexMbox)
     int result = MboxSend(mutexMbox, NULL, 0);
     if(result == -1)
     {
-        USLOSS_Console("lock(): error calling send on mutex");
+        USLOSS_Console("lock(): error calling send on mutex\n");
     }
     if (result == -3)
     {
@@ -189,7 +189,7 @@ void unlock(int mutexMbox)
     int result = MboxReceive(mutexMbox, NULL, 0);
     if(result == -1)
     {
-        USLOSS_Console("unlock(): error calling receive on mutex");
+        USLOSS_Console("unlock(): error calling receive on mutex\n");
     }
     if (result == -3)
     {
