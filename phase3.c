@@ -580,6 +580,12 @@ int spawnLaunch(char *arg)
     int (*startFunc)(char *) = proc->startFunc;
     unlock(ProcTableMutex);
 
+    // Check if we've been zapped
+    if (isZapped())
+    {
+        terminateReal(0);
+    }
+
     // Change the process into user mode
     if (DEBUG3 && debugflag3)
     {
