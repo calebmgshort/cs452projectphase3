@@ -662,7 +662,7 @@ void semPReal(int semHandle)
             USLOSS_Console("semPReal(): semaphore was freed. Now terminating. \n");
         }
         // This semaphore was freed, so terminate
-        terminateReal(0);
+        terminateReal(1);
     }
 }
 
