@@ -12,7 +12,7 @@
 #include "libuser.h"
 
 // Debugging flag
-int debugflag3 = 1;
+int debugflag3 = 0;
 
 // The sems table
 semaphore Semaphores[MAXSEMS];
@@ -482,7 +482,7 @@ int spawnReal(char *name, int (*startFunc)(char *), char *args, int stackSize, i
     {
         USLOSS_Console("spawnReal(): Creating a mailbox for communication with spawnLaunch.\n");
     }
-    int mbox = MboxCreate(0, MAX_MESSAGE);
+    int mbox = MboxCreate(1, MAX_MESSAGE);
     if(mbox < 0)
     {
         USLOSS_Console("spawnReal(): MboxCreate failed.\n");
@@ -537,11 +537,6 @@ int spawnReal(char *name, int (*startFunc)(char *), char *args, int stackSize, i
     {
         USLOSS_Console("spawnReal(): MboxSend failed.\n");
     }
-    MboxRelease(mbox);
-    if(mboxStatus == -1)
-    {
-        USLOSS_Console("spawnReal(): MboxRelease failed.\n");
-    }
 
     // Return the pid of the new proc
     return pid;
@@ -565,6 +560,12 @@ int spawnLaunch(char *arg)
     if(mboxStatus == -1)
     {
         USLOSS_Console("spawnLaunch(): MboxReceive failed.\n");
+    }
+
+    MboxRelease(mboxID);
+    if(mboxStatus == -1)
+    {
+        USLOSS_Console("spawnLaunch(): MboxRelease failed.\n");
     }
 
     if (DEBUG3 && debugflag3)
