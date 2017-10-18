@@ -54,6 +54,9 @@ int getPIDReal();
 extern int start3(char *);
 int spawnLaunch(char *);
 
+/*
+ * Entry point for phase3. Initializes the system call handlers and tables.
+ */
 int start2(char *arg)
 {
     if (DEBUG3 && debugflag3)
@@ -95,6 +98,12 @@ int start2(char *arg)
     }
     genericSemaphoreInitialization();
 
+    // Initialize the ProcTable
+    for (int i = 0; i < MAXPROC; i++)
+    {
+        ProcTable[i].pid = EMPTY;
+    }
+
     // Create the mutex mailbox for the proc table
     if (DEBUG3 && debugflag3)
     {
@@ -131,11 +140,21 @@ int start2(char *arg)
     return 0;
 }
 
-// TODO: Implement
+/*
+ * Syscall Handler for undefined syscalls. Terminates the calling process.
+ */
 void nullsys3(systemArgs *arg)
 {
+    if (DEBUG3 && debugflag3)
+    {
+        USLOSS_Console("nullsys3(): Called\n");
+    }
+    terminateReal(1);
 }
 
+/*
+ * Syscall handler for Spawn. Defers to spawnReal.
+ */
 void spawn(systemArgs *arg)
 {
     // Check the syscall number
@@ -185,6 +204,9 @@ void spawn(systemArgs *arg)
     setToUserMode();
 }
 
+/*
+ * Syscall Handler for Wait. Defers to waitReal.
+ */
 void waitHandler(systemArgs *args)
 {
     // Check the syscall number
@@ -212,6 +234,9 @@ void waitHandler(systemArgs *args)
     setToUserMode();
 }
 
+/*
+ * Syscall Handler for Terminate. Defers to terminateReal
+ */
 void terminate(systemArgs *args)
 {
     // Check the syscall number
