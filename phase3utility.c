@@ -237,3 +237,46 @@ void setToUserMode()
         USLOSS_Halt(1);
     }
 }
+
+/*
+ * Adds child to the child list of parent. Parent cannot be NULL.
+ */
+void addChild(userProcPtr parent, userProcPtr child)
+{
+    if (parent->child == NULL)
+    {
+        parent->child = child;
+    }
+    else
+    {
+        userProcPtr olderSibling = parent->child;
+        while (olderSibling->nextSibling != NULL)
+        {
+            olderSibling = olderSibling->nextSibling;
+        }
+        olderSibling->nextSibling = child;
+    }
+}
+
+/*
+ * Removes up to one proc that == child from the child list of parent.
+ * Parent cannot be NULL.
+ */
+void removeChild(userProcPtr parent, userProcPtr child)
+{
+    if (parent->child == child)
+    {
+        parent->child = parent->child->nextSibling;
+        return;
+    }
+    userProcPtr olderSibling = parent->child;
+    while (olderSibling->nextSibling != NULL)
+    {
+        if (olderSibling->nextSibling == child)
+        {
+            olderSibling->nextSibling = olderSibling->nextSibling->nextSibling;
+            return;
+        } 
+        olderSibling = olderSibling->nextSibling;
+    }
+}

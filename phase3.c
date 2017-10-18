@@ -482,6 +482,12 @@ int spawnReal(char *name, int (*startFunc)(char *), char *args, int stackSize, i
     proc->pid = pid;
     proc->args = args;
     proc->startFunc = startFunc;
+    proc->child = NULL;
+    proc->nextSibling = NULL;
+    // Add the new proc as a child of the current proc
+    userProcPtr parent = &ProcTable[getpid() % MAXPROC];
+    addChild(parent, proc);
+    proc->parent = parent;
     unlock(ProcTableMutex);
 
     // Let spawnLaunch execute and release the mailbox
@@ -548,7 +554,32 @@ int waitReal(int *status)
  */
 void terminateReal(int status)
 {
-    // TODO coordinate with children
+    // Zap all the children of this process.
+    lock(ProcTableMutex);
+    userProcPtr thisProc = &ProcTable[getpid() % MAXPROC];
+    userProcPtr childToZap = thisProc->child;
+    unlock(ProcTableMutex);
+
+    while (childToZap != NULL)
+    {
+        lock(ProcTableMutex);
+        int pidToZap = childToZap->pid;
+        unlock(ProcTableMutex);
+
+        zap(pidToZap);
+
+        lock(ProcTableMutex);
+        childToZap = childToZap->nextSibling;
+        unlock(ProcTableMutex);
+    }
+
+    // Remove this proc from the child list of our parent
+    lock(ProcTableMutex);
+    userProcPtr parent = thisProc->parent;
+    removeChild(parent, thisProc);
+    unlock(ProcTableMutex);
+
+    // Quit with the desired status
     quit(status);
 }
 

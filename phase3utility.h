@@ -10,4 +10,6 @@ extern int freeSem(int);
 extern void lock(int);
 extern void unlock(int);
 extern void setToUserMode();
+extern void addChild(userProcPtr, userProcPtr);
+extern void removeChild(userProcPtr, userProcPtr);
 #endif

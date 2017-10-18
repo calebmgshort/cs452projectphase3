@@ -17,6 +17,9 @@ struct userProc
     int pid;                          // The pid of this process
     int (*startFunc)(char *);         // The function that spawnLaunch will call
     char *args;                       // The arguments to the startFunc
+    userProcPtr child;                // Pointer to linked list of user mode children
+    userProcPtr nextSibling;
+    userProcPtr parent;               // The parent of this process
 };
 
 struct semaphore
