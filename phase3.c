@@ -12,7 +12,7 @@
 #include "libuser.h"
 
 // Debugging flag
-int debugflag3 = 0;
+int debugflag3 = 1;
 
 // The sems table
 semaphore Semaphores[MAXSEMS];
@@ -483,6 +483,11 @@ int spawnReal(char *name, int (*startFunc)(char *), char *args, int stackSize, i
         USLOSS_Console("spawnReal(): Creating a mailbox for communication with spawnLaunch.\n");
     }
     int mbox = MboxCreate(0, MAX_MESSAGE);
+    if(mbox < 0)
+    {
+        USLOSS_Console("spawnReal(): MboxCreate failed.\n");
+    }
+    int mboxStatus;
 
     // Convert the mboxID into a string
     char buf[MAX_MESSAGE];
@@ -496,7 +501,11 @@ int spawnReal(char *name, int (*startFunc)(char *), char *args, int stackSize, i
     int pid = fork1(name, spawnLaunch, buf, stackSize, priority);
     if (pid < 0)
     {
-        MboxRelease(mbox);
+        mboxStatus = MboxRelease(mbox);
+        if(mboxStatus == -1)
+        {
+            USLOSS_Console("spawnReal(): MboxRelease failed.\n");
+        }
         return -1;
     }
 
@@ -523,8 +532,16 @@ int spawnReal(char *name, int (*startFunc)(char *), char *args, int stackSize, i
     {
         USLOSS_Console("spawnReal(): Coordinating with spawnLaunch for proc %d.\n", pid);
     }
-    MboxSend(mbox, NULL, 0);
+    mboxStatus = MboxSend(mbox, NULL, 0);
+    if(mboxStatus == -1)
+    {
+        USLOSS_Console("spawnReal(): MboxSend failed.\n");
+    }
     MboxRelease(mbox);
+    if(mboxStatus == -1)
+    {
+        USLOSS_Console("spawnReal(): MboxRelease failed.\n");
+    }
 
     // Return the pid of the new proc
     return pid;
@@ -536,11 +553,19 @@ int spawnReal(char *name, int (*startFunc)(char *), char *args, int stackSize, i
  */
 int spawnLaunch(char *arg)
 {
+    if(DEBUG3 && debugflag3)
+    {
+        USLOSS_Console("spawnLaunch(): called\n");
+    }
     // Unpack the mboxID from args
     int mboxID = atoi(arg);
 
     // Wait for spawnReal to finish setting up the proc table
-    MboxReceive(mboxID, NULL, 0);
+    int mboxStatus = MboxReceive(mboxID, NULL, 0);
+    if(mboxStatus == -1)
+    {
+        USLOSS_Console("spawnLaunch(): MboxReceive failed.\n");
+    }
 
     if (DEBUG3 && debugflag3)
     {
@@ -582,6 +607,10 @@ int waitReal(int *status)
  */
 void terminateReal(int status)
 {
+    if(DEBUG3 && debugflag3)
+    {
+        USLOSS_Console("terminateReal(): called\n");
+    }
     // Zap all the children of this process.
     lock(ProcTableMutex);
     userProcPtr thisProc = &ProcTable[getpid() % MAXPROC];
@@ -662,7 +691,7 @@ void semPReal(int semHandle)
             USLOSS_Console("semPReal(): semaphore was freed. Now terminating. \n");
         }
         // This semaphore was freed, so terminate
-        terminateReal(0);
+        terminateReal(1);
     }
 }
 
