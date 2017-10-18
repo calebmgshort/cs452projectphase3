@@ -54,6 +54,7 @@ int getPIDReal();
 extern int start3(char *);
 int spawnLaunch(char *);
 
+
 int start2(char *arg)
 {
     if (DEBUG3 && debugflag3)
@@ -228,6 +229,9 @@ void terminate(systemArgs *args)
     terminateReal(status);
 }
 
+/*
+ *  The syscallHandler for SemCreate
+ */
 void semCreate(systemArgs *args)
 {
     if(DEBUG3 && debugflag3)
@@ -273,7 +277,9 @@ void semCreate(systemArgs *args)
     setToUserMode();
 }
 
-
+/*
+ *  The syscallHandler for SemP
+ */
 void semP(systemArgs *args)
 {
     if(DEBUG3 && debugflag3)
@@ -308,7 +314,9 @@ void semP(systemArgs *args)
     setToUserMode();
 }
 
-
+/*
+ *  The syscallHandler for SemV
+ */
 void semV(systemArgs *args)
 {
     if(DEBUG3 && debugflag3)
@@ -343,7 +351,9 @@ void semV(systemArgs *args)
     setToUserMode();
 }
 
-
+/*
+ *  The syscallHandler for SemFree
+ */
 void semFree(systemArgs *args)
 {
     if(DEBUG3 && debugflag3)
@@ -379,7 +389,9 @@ void semFree(systemArgs *args)
     setToUserMode();
 }
 
-
+/*
+ *  The syscallHandler for GetTimeOfDay
+ */
 void getTimeOfDay(systemArgs *args)
 {
     int timeOfDay = getTimeOfDayReal();
@@ -397,7 +409,9 @@ void getTimeOfDay(systemArgs *args)
     setToUserMode();
 }
 
-
+/*
+ *  The syscallHandler for cpuTime
+ */
 void cpuTime(systemArgs *args)
 {
     int cputime = cpuTimeReal();
@@ -647,7 +661,9 @@ void terminateReal(int status)
     quit(status);
 }
 
-
+/*
+ *  Create a semaphore with the given initSemValue. Called by semCreate
+ */
 int semCreateReal(int initSemValue)
 {
     if(DEBUG3 && debugflag3)
@@ -664,7 +680,9 @@ int semCreateReal(int initSemValue)
     return semHandle; // The handle is just the semID
 }
 
-
+/*
+ *  Perform a P operation on the given semaphore. Called by semP
+ */
 void semPReal(int semHandle)
 {
     if(DEBUG3 && debugflag3)
@@ -702,7 +720,9 @@ void semPReal(int semHandle)
     }
 }
 
-
+/*
+ *  Perform a V operation on the given semaphore. Called by semV
+ */
 void semVReal(int semHandle)
 {
     if(DEBUG3 && debugflag3)
@@ -728,6 +748,9 @@ void semVReal(int semHandle)
     unlock(sem->mutex);
 }
 
+/*
+ *  Free the given semaphore. Called by semFree
+ */
 int semFreeReal(int semHandle)
 {
     if(DEBUG3 && debugflag3)
@@ -742,7 +765,9 @@ int semFreeReal(int semHandle)
     return returnStatus;
 }
 
-
+/*
+ *  Return the time of day, or the clock value, from USLOSS. Called by getTimeOfDay
+ */
 int getTimeOfDayReal()
 {
     int timeOfDay = -1;
@@ -757,7 +782,9 @@ int getTimeOfDayReal()
     return timeOfDay;
 }
 
-
+/*
+ *  Return the cpu time consumed by the current process. Called by cpuTime
+ */
 int cpuTimeReal()
 {
     return readtime();

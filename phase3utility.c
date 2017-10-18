@@ -211,25 +211,13 @@ void unlock(int mutexMbox)
  */
 void setToUserMode()
 {
-    if (DEBUG3 && debugflag3)
-    {
-//        USLOSS_Console("setToUserMode(): Called\n");
-    }
     unsigned int psr = USLOSS_PsrGet();
-    if (DEBUG3 && debugflag3)
-    {
-//        USLOSS_Console("setToUserMode(): Old psr: %d\n", psr);
-    }
     if (!(psr & USLOSS_PSR_CURRENT_MODE))
     {
         USLOSS_Console("setToUserMode(): Called from user mode.  Halting...\n");
         USLOSS_Halt(1);
     }
     unsigned int newpsr = (psr & ~USLOSS_PSR_CURRENT_MODE) | USLOSS_PSR_CURRENT_INT;
-    if (DEBUG3 && debugflag3)
-    {
-//        USLOSS_Console("setToUserMode(): New psr: %d\n", newpsr);
-    }
     int result = USLOSS_PsrSet(newpsr);
     if (result != USLOSS_DEV_OK)
     {
@@ -276,7 +264,7 @@ void removeChild(userProcPtr parent, userProcPtr child)
         {
             olderSibling->nextSibling = olderSibling->nextSibling->nextSibling;
             return;
-        } 
+        }
         olderSibling = olderSibling->nextSibling;
     }
 }
