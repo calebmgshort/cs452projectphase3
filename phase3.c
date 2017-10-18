@@ -46,6 +46,8 @@ void semPReal(int);
 void semVReal(int);
 int semFreeReal(int);
 void terminateReal(int);
+int getTimeOfDayReal();
+int cpuTimeReal();
 int getPIDReal();
 
 // Other prototypes
@@ -377,14 +379,40 @@ void semFree(systemArgs *args)
     setToUserMode();
 }
 
-// TODO: Implement
+
 void getTimeOfDay(systemArgs *args)
 {
+    int timeOfDay = getTimeOfDayReal();
+
+    args->arg1 = (void*) ((long) timeOfDay);
+
+    if(isZapped())
+    {
+        if(DEBUG3 && debugflag3)
+        {
+            USLOSS_Console("getTimeOfDay(): process was zapped\n");
+        }
+        terminateReal(0);
+    }
+    setToUserMode();
 }
 
-// TODO: Implement
+
 void cpuTime(systemArgs *args)
 {
+    int cputime = cpuTimeReal();
+
+    args->arg1 = (void*) ((long) cputime);
+
+    if(isZapped())
+    {
+        if(DEBUG3 && debugflag3)
+        {
+            USLOSS_Console("getTimeOfDay(): process was zapped\n");
+        }
+        terminateReal(0);
+    }
+    setToUserMode();
 }
 
 void getPID(systemArgs *args)
@@ -678,14 +706,25 @@ int semFreeReal(int semHandle)
     return returnStatus;
 }
 
-// TODO: Implement
-void getTimeOfDayReal()
+
+int getTimeOfDayReal()
 {
+    int timeOfDay = -1;
+
+    int returnStatus = USLOSS_DeviceInput(USLOSS_CLOCK_INT, 0, &timeOfDay);
+
+    if(returnStatus == USLOSS_DEV_INVALID)
+    {
+        USLOSS_Console("getTimeOfDayReal(): returned USLOSS_DEV_INVALID\n");
+    }
+
+    return timeOfDay;
 }
 
-// TODO: Implement
-void cpuTimeReal()
+
+int cpuTimeReal()
 {
+    return readtime();
 }
 
 int getPIDReal()
