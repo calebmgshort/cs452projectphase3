@@ -1,7 +1,7 @@
-PREFIX = /home/theimbichner/Csc452Project/
-LDFLAGS += -L. -L./libraries/linux -L${PREFIX}/lib
-#PREFIX = /Users/Caleb/Documents/ComputerScience/csc452/project/compilefolder#${HOME}
-#LDFLAGS += -L. -L./libraries/osx -L${PREFIX}/lib
+#PREFIX = /home/theimbichner/Csc452Project/
+#LDFLAGS += -L. -L./libraries/linux -L${PREFIX}/lib
+PREFIX = /Users/Caleb/Documents/ComputerScience/csc452/project/compilefolder#${HOME}
+LDFLAGS += -L. -L./libraries/osx -L${PREFIX}/lib
 
 TARGET = libphase3.a
 ASSIGNMENT = 452phase3
@@ -20,7 +20,7 @@ HDRS = sems.h phase3utility.h
 
 INCLUDE = ${PREFIX}/include
 
-CFLAGS = -Wall -g -std=gnu99 -I. -I${INCLUDE} 
+CFLAGS = -Wall -g -std=gnu99 -I. -I${INCLUDE}
 
 UNAME := $(shell uname -s)
 
@@ -31,13 +31,13 @@ endif
 TESTDIR = testcases
 TESTS = test00 test01 test02 test03 test04 test05 test06 test07 test08 \
         test09 test10 test11 test12 test13 test14 test15 test16 test17 \
-        test18 test19 test20 
+        test18 test19 test20
 
 LIBS = -l$(PHASE2LIB) -l$(PHASE1LIB) -lusloss3.6 -l$(PHASE1LIB) -l$(PHASE2LIB) -lphase3
 
 
 $(TARGET):	$(COBJS)
-		$(AR) -r $@ $(COBJS) 
+		$(AR) -r $@ $(COBJS)
 
 $(TESTS):	$(TARGET) p1.o
 	$(CC) $(CFLAGS) -c $(TESTDIR)/$@.c
@@ -51,4 +51,3 @@ phase3.o:	sems.h
 
 submit: $(CSRCS) $(HDRS) Makefile
 	tar cvzf phase3.tgz $(CSRCS) $(HDRS) Makefile p1.c
-
